@@ -312,6 +312,90 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 .t-mbtns button{flex:1;padding:9px;border-radius:11px;border:none;font-family:'Inter',sans-serif;font-size:13px;font-weight:600;cursor:pointer}
 .t-mok{background:var(--accent);color:#fff}.t-mcancel{background:var(--accent-dim);color:var(--accent)}
 
+
+/* ══ PROGRESS CHART ══ */
+.pc-wrap{margin-top:20px}
+.pc-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px}
+.pc-title{font-size:15px;font-weight:700;color:var(--text)}
+.pc-add-row{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+.pc-input{flex:1;min-width:120px;padding:9px 13px;border-radius:11px;border:1px solid var(--border);font-family:'Inter',sans-serif;font-size:13px;color:var(--text);outline:none;background:var(--bg)}
+.pc-input:focus{border-color:var(--accent)}
+.pc-btn{padding:9px 16px;border-radius:11px;border:none;background:var(--accent);color:#fff;font-family:'Inter',sans-serif;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;transition:all .2s}
+.pc-btn:hover{background:var(--accent-light);transform:translateY(-1px)}
+.pc-btn.secondary{background:var(--accent-dim);color:var(--accent)}
+.pc-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.pc-table{border-collapse:collapse;min-width:100%;white-space:nowrap}
+.pc-table th{font-size:11px;font-weight:700;color:var(--text2);text-align:center;padding:8px 10px;border-bottom:2px solid var(--border);background:var(--bg);text-transform:uppercase;letter-spacing:.5px}
+.pc-table th.pc-subj-col{text-align:left;min-width:200px;padding-left:12px}
+.pc-table td{padding:5px 4px;border-bottom:1px solid var(--border);vertical-align:middle}
+.pc-table tr:last-child td{border-bottom:none}
+.pc-table tr:hover td{background:rgba(91,77,232,0.03)}
+.pc-subj-row td{background:var(--accent-dim)}
+.pc-subj-name{font-size:13px;font-weight:700;color:var(--accent);padding:8px 12px;display:flex;align-items:center;gap:8px}
+.pc-subj-del{background:none;border:none;color:var(--text3);cursor:pointer;font-size:13px;transition:color .15s;padding:0}
+.pc-subj-del:hover{color:#ef4444}
+.pc-topic-cell{display:flex;align-items:center;gap:10px;padding-left:24px}
+.pc-topic-name-text{font-size:12px;font-weight:500;color:var(--text)}
+.pc-topic-del{background:none;border:none;color:var(--text3);cursor:pointer;font-size:11px;padding:0;transition:color .15s}
+.pc-topic-del:hover{color:#ef4444}
+.pc-cell{text-align:center}
+
+/* Progress ring */
+.pc-ring-wrap{display:flex;flex-direction:column;align-items:center;gap:2px;padding:4px 8px}
+.pc-ring-svg{transform:rotate(-90deg)}
+.pc-ring-bg{fill:none;stroke:var(--border);stroke-width:3}
+.pc-ring-fill{fill:none;stroke-width:3;stroke-linecap:round;transition:stroke-dashoffset .5s cubic-bezier(.34,1.56,.64,1),stroke .3s}
+.pc-ring-pct{font-size:10px;font-weight:700;color:var(--text);font-family:'Inter',sans-serif}
+
+/* Checkbox */
+.pc-box{
+  width:26px;height:26px;border-radius:8px;
+  border:2px solid var(--border);
+  background:var(--surface);
+  cursor:pointer;margin:0 auto;
+  display:flex;align-items:center;justify-content:center;
+  transition:all .25s cubic-bezier(.34,1.56,.64,1);
+  position:relative;overflow:hidden;
+}
+.pc-box::before{
+  content:'';position:absolute;inset:0;
+  background:var(--accent);
+  transform:scale(0);border-radius:6px;
+  transition:transform .25s cubic-bezier(.34,1.56,.64,1);
+}
+.pc-box::after{
+  content:'✓';font-size:14px;font-weight:800;
+  color:transparent;position:relative;z-index:1;
+  transition:color .15s .1s,transform .25s cubic-bezier(.34,1.56,.64,1);
+  transform:scale(0.3);
+}
+.pc-box:hover{border-color:var(--accent);transform:scale(1.1)}
+.pc-box.checked::before{transform:scale(1)}
+.pc-box.checked::after{color:#fff;transform:scale(1)}
+.pc-box.checked{border-color:var(--accent);box-shadow:0 0 14px rgba(91,77,232,0.4);transform:scale(1.1)}
+@keyframes pcPop{0%{transform:scale(1.1)}40%{transform:scale(1.25)}70%{transform:scale(0.97)}100%{transform:scale(1.1)}}
+.pc-box.checked.just-ticked{animation:pcPop .45s cubic-bezier(.34,1.56,.64,1) forwards}
+
+.pc-col-add{padding:6px 8px;border-radius:9px;border:1px dashed var(--border);background:transparent;font-family:'Inter',sans-serif;font-size:11px;color:var(--text3);cursor:pointer;transition:all .2s;white-space:nowrap}
+.pc-col-add:hover{border-color:var(--accent);color:var(--accent)}
+.pc-empty{text-align:center;padding:32px;font-size:13px;color:var(--text3)}
+.pc-col-head-wrap{display:flex;align-items:center;gap:4px;justify-content:center}
+.pc-col-del{background:none;border:none;color:var(--text3);cursor:pointer;font-size:11px;padding:0;transition:color .15s}
+.pc-col-del:hover{color:#ef4444}
+
+/* Confirm dialog */
+.pc-confirm{position:fixed;inset:0;background:rgba(26,23,48,.5);z-index:500;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+.pc-confirm-box{background:var(--surface);border-radius:20px;padding:28px;width:300px;box-shadow:0 20px 60px rgba(91,77,232,.2);border:1px solid var(--border);text-align:center}
+.pc-confirm-title{font-size:16px;font-weight:700;margin-bottom:8px;color:var(--text)}
+.pc-confirm-msg{font-size:13px;color:var(--text2);margin-bottom:20px;line-height:1.5}
+.pc-confirm-btns{display:flex;gap:8px}
+.pc-confirm-yes{flex:1;padding:11px;border-radius:12px;border:none;background:#ef4444;color:#fff;font-family:'Inter',sans-serif;font-size:13px;font-weight:700;cursor:pointer}
+.pc-confirm-no{flex:1;padding:11px;border-radius:12px;border:none;background:var(--accent-dim);color:var(--accent);font-family:'Inter',sans-serif;font-size:13px;font-weight:700;cursor:pointer}
+
+.pc-accordion-header:hover { background: var(--border) !important; }
+.pc-accordion { transition: box-shadow .2s; }
+.pc-accordion:hover { box-shadow: 0 2px 10px rgba(30,41,30,0.08); }
+
 /* ══ AI STUDY ══ */
 .ai-mode-row{display:flex;gap:8px;margin-bottom:16px}
 .ai-mode-btn{flex:1;padding:11px;border-radius:13px;border:1.5px solid var(--border);background:var(--surface);font-family:'Inter',sans-serif;font-size:13px;font-weight:600;color:var(--text2);cursor:pointer;transition:all .2s}
@@ -345,6 +429,70 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 .quiz-retry-btn{width:100%;padding:12px;border-radius:13px;border:none;background:var(--accent);color:#fff;font-family:'Inter',sans-serif;font-size:13px;font-weight:700;cursor:pointer;margin-top:10px;transition:all .2s}
 .quiz-retry-btn:hover{background:var(--accent-light)}
 .ai-error{color:#ef4444;font-size:13px;padding:14px;background:#fee2e2;border-radius:11px;margin-bottom:12px}
+
+/* ═══ NTA QUIZ INTERFACE ═══ */
+.nta-wrap{display:none;flex-direction:column;gap:0}
+.nta-wrap.active{display:flex}
+.nta-header{background:#7A947A;color:#fff;padding:10px 16px;border-radius:12px 12px 0 0;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
+.nta-header-left{font-size:13px;font-weight:700}
+.nta-header-right{font-size:12px;opacity:.9}
+.nta-body{display:flex;gap:0;background:var(--surface);border:1px solid var(--border);border-top:none;border-radius:0 0 12px 12px;overflow:hidden}
+.nta-question-area{flex:1;padding:20px;border-right:1px solid var(--border);min-width:0}
+.nta-q-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px}
+.nta-q-num{font-size:13px;font-weight:700;color:var(--text2);background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:4px 12px}
+.nta-q-status-badge{font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;border:none}
+.nta-q-text{font-size:14px;line-height:1.75;color:var(--text);margin-bottom:20px;font-weight:500}
+.nta-options{display:flex;flex-direction:column;gap:10px;margin-bottom:20px}
+.nta-opt{display:flex;align-items:flex-start;gap:10px;padding:11px 14px;border-radius:10px;border:1.5px solid var(--border);background:var(--bg);cursor:pointer;transition:all .18s;text-align:left;width:100%;font-family:'Inter',sans-serif;color:var(--text)}
+.nta-opt:hover:not(:disabled){border-color:var(--accent);background:var(--accent-dim)}
+.nta-opt.selected{border-color:var(--accent);background:var(--accent-dim);font-weight:600}
+.nta-opt.marked-review{border-color:#8b5cf6;background:#ede9fe}
+.nta-opt.correct-final{background:#d1fae5;border-color:#22c55e;color:#166534;font-weight:700}
+.nta-opt.wrong-final{background:#fee2e2;border-color:#ef4444;color:#991b1b;font-weight:700}
+.nta-opt:disabled{cursor:default}
+.nta-opt-label{width:22px;height:22px;border-radius:50%;background:var(--border);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;color:var(--text2)}
+.nta-opt.selected .nta-opt-label{background:var(--accent);color:#fff}
+.nta-opt.correct-final .nta-opt-label{background:#22c55e;color:#fff}
+.nta-opt.wrong-final .nta-opt-label{background:#ef4444;color:#fff}
+.nta-opt-text{font-size:13px;line-height:1.5;padding-top:2px}
+.nta-explain{margin-top:12px;font-size:12px;padding:10px 14px;background:#fffbeb;border-radius:9px;line-height:1.6;border-left:3px solid #f59e0b;color:#92400e}
+.nta-action-btns{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.nta-btn{padding:9px 16px;border-radius:10px;border:none;font-family:'Inter',sans-serif;font-size:12px;font-weight:700;cursor:pointer;transition:all .18s;white-space:nowrap}
+.nta-btn:active{transform:scale(.96)}
+.nta-btn-save-next{background:#22c55e;color:#fff}
+.nta-btn-save-next:hover{background:#16a34a}
+.nta-btn-mark{background:#8b5cf6;color:#fff}
+.nta-btn-mark:hover{background:#7c3aed}
+.nta-btn-clear{background:#fee2e2;color:#ef4444;border:1px solid #fca5a5}
+.nta-btn-clear:hover{background:#fca5a5}
+.nta-nav-btns{display:flex;gap:8px;flex-wrap:wrap;justify-content:space-between}
+.nta-btn-back{background:var(--accent-dim);color:var(--accent);border:1px solid var(--border)}
+.nta-btn-back:hover{background:var(--border)}
+.nta-btn-next{background:var(--accent);color:#fff}
+.nta-btn-next:hover{background:var(--accent-light)}
+.nta-btn-submit{background:#ef4444;color:#fff;padding:10px 22px;font-size:13px}
+.nta-btn-submit:hover{background:#dc2626}
+.nta-sidebar{width:210px;flex-shrink:0;padding:14px;background:var(--bg);display:flex;flex-direction:column;gap:10px}
+.nta-legend{display:flex;flex-direction:column;gap:6px;margin-bottom:4px}
+.nta-legend-item{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--text2)}
+.nta-legend-dot{width:20px;height:20px;border-radius:4px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff}
+.nta-palette-label{font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.5px}
+.nta-palette{display:grid;grid-template-columns:repeat(5,1fr);gap:5px}
+.nta-pq{width:32px;height:32px;border-radius:6px;border:1.5px solid var(--border);background:var(--surface);font-family:'Inter',sans-serif;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;color:var(--text2)}
+.nta-pq:hover{border-color:var(--accent);color:var(--accent)}
+.nta-pq.pq-current{border-color:var(--accent);background:var(--accent);color:#fff;box-shadow:0 2px 8px rgba(122,148,122,.4)}
+.nta-pq.pq-answered{background:#22c55e;border-color:#22c55e;color:#fff}
+.nta-pq.pq-not-answered{background:#ef4444;border-color:#ef4444;color:#fff}
+.nta-pq.pq-marked{background:#8b5cf6;border-color:#8b5cf6;color:#fff}
+.nta-pq.pq-marked-answered{background:#8b5cf6;border-color:#22c55e;color:#fff;box-shadow:inset 0 0 0 2px #22c55e}
+.nta-result-wrap{text-align:center;padding:30px 16px}
+.nta-result-score{font-size:48px;font-weight:800;color:var(--accent);line-height:1}
+.nta-result-sub{font-size:14px;color:var(--text2);margin-top:8px;margin-bottom:20px}
+.nta-result-breakdown{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-bottom:20px}
+.nta-rb-item{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 18px;text-align:center;min-width:80px}
+.nta-rb-num{font-size:22px;font-weight:800;line-height:1}
+.nta-rb-label{font-size:11px;color:var(--text2);margin-top:3px}
+@media(max-width:640px){.nta-body{flex-direction:column}.nta-sidebar{width:100%;border-top:1px solid var(--border)}.nta-palette{grid-template-columns:repeat(8,1fr)}}
 </style>
 </head>
 <body>
@@ -487,6 +635,29 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
         <div id="habitGrid"></div>
       </div>
     </div>
+
+    <!-- PROGRESS CHART -->
+    <div class="card pc-wrap">
+      <div class="pc-header">
+        <div class="pc-title">Progress Chart</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="pc-btn secondary" id="pcRestoreBtn">Backups</button>
+          <button class="pc-btn secondary" id="pcAddColBtn">+ Column</button>
+          <button class="pc-btn secondary" id="pcAddSubjBtn">+ Subject</button>
+        </div>
+      </div>
+      <div class="pc-add-row" id="pcColAddRow" style="display:none;margin-bottom:10px">
+        <input class="pc-input" id="pcColNameInput" placeholder="Column name (e.g. Homework)" maxlength="40"/>
+        <button class="pc-btn" id="pcColConfirmBtn">&#10003; Add</button>
+      </div>
+      <div class="pc-add-row" id="pcSubjAddRow" style="display:none;margin-bottom:10px">
+        <input class="pc-input" id="pcSubjInput" placeholder="Subject name (e.g. Maths)" maxlength="40"/>
+        <button class="pc-btn" id="pcAddTopicBtn">+ Add</button>
+      </div>
+      <div class="pc-scroll">
+        <div id="pcTableWrap"></div>
+      </div>
+    </div>
   </div>
 
   <!-- ══ NOTES PAGE ══ -->
@@ -538,11 +709,11 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 
     <!-- PDF QUIZ SECTION -->
     <div id="aiQuizSection" style="display:none">
-      <div class="card">
+      <div class="card" id="aiQuizUploadCard">
         <div class="card-title" style="margin-bottom:6px">Quiz from PDF</div>
-        <p style="font-size:12px;color:var(--text2);margin-bottom:16px">Upload your class material — AI generates a multiple choice quiz for you.</p>
+        <p style="font-size:12px;color:var(--text2);margin-bottom:16px">Upload your class material — AI generates a quiz just like NTA mock tests.</p>
         <div class="ai-upload-area" id="aiQuizUploadArea">
-          <div class="ai-upload-icon"></div>
+          <div class="ai-upload-icon">📄</div>
           <div class="ai-upload-text">Tap to upload PDF</div>
           <input type="file" id="aiQuizPdf" accept=".pdf" style="display:none"/>
         </div>
@@ -553,7 +724,56 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
           <span>Reading PDF and creating quiz…</span>
         </div>
         <div id="aiQuizError" style="display:none"></div>
-        <div id="aiQuizArea" style="display:none"></div>
+      </div>
+
+      <!-- NTA Quiz Interface -->
+      <div class="nta-wrap" id="ntaQuizWrap">
+        <div class="nta-header">
+          <div class="nta-header-left" id="ntaSubjectLabel">Quiz</div>
+          <div class="nta-header-right" id="ntaTimerLabel"></div>
+        </div>
+        <div class="nta-body">
+          <!-- Question area -->
+          <div class="nta-question-area" id="ntaQuestionArea">
+            <div class="nta-q-header">
+              <div class="nta-q-num" id="ntaQNum">Question 1</div>
+              <div class="nta-q-status-badge" id="ntaQBadge" style="background:var(--border);color:var(--text2)">Not Answered</div>
+            </div>
+            <div class="nta-q-text" id="ntaQText"></div>
+            <div class="nta-options" id="ntaOptions"></div>
+            <div class="nta-explain" id="ntaExplain" style="display:none"></div>
+
+            <div class="nta-action-btns">
+              <button class="nta-btn nta-btn-save-next" id="ntaBtnSaveNext">SAVE &amp; NEXT</button>
+              <button class="nta-btn nta-btn-mark" id="ntaBtnMark">SAVE &amp; MARK FOR REVIEW</button>
+              <button class="nta-btn nta-btn-clear" id="ntaBtnClear">CLEAR RESPONSE</button>
+            </div>
+            <div class="nta-nav-btns">
+              <button class="nta-btn nta-btn-back" id="ntaBtnBack">&lt;&lt; BACK</button>
+              <button class="nta-btn nta-btn-submit" id="ntaBtnSubmit">SUBMIT</button>
+              <button class="nta-btn nta-btn-next" id="ntaBtnNext">NEXT &gt;&gt;</button>
+            </div>
+          </div>
+          <!-- Sidebar -->
+          <div class="nta-sidebar">
+            <div class="nta-legend">
+              <div class="nta-legend-item"><div class="nta-legend-dot" style="background:#6b7280" id="ntaLegNotVisited">?</div><span id="ntaCountNotVisited">0</span> Not Visited</div>
+              <div class="nta-legend-item"><div class="nta-legend-dot" style="background:#ef4444">!</div><span id="ntaCountNotAnswered">0</span> Not Answered</div>
+              <div class="nta-legend-item"><div class="nta-legend-dot" style="background:#22c55e">✓</div><span id="ntaCountAnswered">0</span> Answered</div>
+              <div class="nta-legend-item"><div class="nta-legend-dot" style="background:#8b5cf6">★</div><span id="ntaCountMarked">0</span> Marked for Review</div>
+            </div>
+            <div class="nta-palette-label">Questions</div>
+            <div class="nta-palette" id="ntaPalette"></div>
+          </div>
+        </div>
+        <!-- Result panel (shown after submit) -->
+        <div class="nta-result-wrap" id="ntaResult" style="display:none;background:var(--surface);border:1px solid var(--border);border-top:none;border-radius:0 0 12px 12px">
+          <div class="nta-result-score" id="ntaResultScore"></div>
+          <div class="nta-result-sub" id="ntaResultSub"></div>
+          <div class="nta-result-breakdown" id="ntaResultBreakdown"></div>
+          <button class="nta-btn nta-btn-next" style="padding:11px 28px;font-size:13px" onclick="_ntaRetry()">🔄 Try Again</button>
+          <button class="nta-btn nta-btn-back" style="padding:11px 28px;font-size:13px;margin-left:8px" onclick="_ntaNewUpload()">📄 New PDF</button>
+        </div>
       </div>
     </div>
 
@@ -631,14 +851,50 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
   </div>
 </div>
 
-<!-- confirm modal -->
+<!-- confirm modal (timed) -->
 <div class="modal-overlay" id="confirmOverlay">
   <div class="modal">
     <h3 id="confirmTitle">Are you sure?</h3>
     <p id="confirmMsg"></p>
+    <div style="margin-bottom:14px">
+      <div style="height:4px;border-radius:4px;background:var(--border);overflow:hidden">
+        <div id="confirmTimerBar" style="height:100%;width:100%;background:#ef4444;border-radius:4px"></div>
+      </div>
+      <div style="font-size:11px;color:var(--text3);text-align:right;margin-top:4px" id="confirmTimerLabel">8s</div>
+    </div>
     <div class="modal-btns">
       <button class="m-cancel" id="confirmCancel">Cancel</button>
       <button class="m-danger" id="confirmOk">Delete</button>
+    </div>
+    <div id="confirmWarning" style="display:none;font-size:11px;color:#ef4444;margin-top:8px;text-align:center"></div>
+  </div>
+</div>
+
+<!-- backup modal: weekly snapshots + recently deleted -->
+<div class="modal-overlay" id="snapshotOverlay">
+  <div class="modal" style="width:400px;max-width:96vw;max-height:90vh;overflow-y:auto">
+    <h3 style="margin-bottom:16px">Backups</h3>
+
+    <!-- section tabs -->
+    <div style="display:flex;gap:6px;margin-bottom:16px;background:var(--bg);border-radius:11px;padding:4px">
+      <button id="snapTabWeekly" onclick="_snapTab('weekly')" style="flex:1;padding:8px;border-radius:8px;border:none;font-family:'Inter',sans-serif;font-size:12px;font-weight:700;cursor:pointer;background:var(--accent);color:#fff">Weekly Snapshots</button>
+      <button id="snapTabTrash"  onclick="_snapTab('trash')"  style="flex:1;padding:8px;border-radius:8px;border:none;font-family:'Inter',sans-serif;font-size:12px;font-weight:700;cursor:pointer;background:transparent;color:var(--text2)">Recently Deleted</button>
+    </div>
+
+    <!-- weekly section -->
+    <div id="snapSecWeekly">
+      <p style="font-size:12px;color:var(--text2);margin-bottom:10px">Auto-saved every week. Restoring overwrites all your current data.</p>
+      <div id="snapshotList" style="display:flex;flex-direction:column;gap:6px"></div>
+    </div>
+
+    <!-- trash section -->
+    <div id="snapSecTrash" style="display:none">
+      <p style="font-size:12px;color:var(--text2);margin-bottom:10px">Items deleted recently. Restore them individually. Once restored, they disappear from here.</p>
+      <div id="trashList" style="display:flex;flex-direction:column;gap:6px"></div>
+    </div>
+
+    <div style="margin-top:14px">
+      <button class="m-cancel" id="snapshotCancel" style="width:100%;padding:11px;border-radius:12px;border:none;font-family:'Inter',sans-serif;font-size:13px;font-weight:600;cursor:pointer;background:var(--accent-dim);color:var(--accent)">Close</button>
     </div>
   </div>
 </div>
@@ -733,7 +989,7 @@ async function saveProfile(profile) {
 // ═══════════════════════════════════════════════
 let activeProfile = null;
 let data = {}, habits = [], notes = [];
-let yearOffset = 0, habitMonthOffset = 0, activeNoteId = null, confirmCb = null;
+let yearOffset = 0, habitMonthOffset = 0, activeNoteId = null;
 
 function profileDataKeys(id) {
   return { d: `dw_data_${id}`, h: `dw_habits_${id}`, n: `dw_notes_${id}`, t: `dw_timer_${id}`, th: `dw_timerhist_${id}` };
@@ -863,6 +1119,7 @@ async function launchApp(profile) {
   activeProfile = profile;
   await loadProfileData(profile.id);
   yearOffset = 0; habitMonthOffset = 0; activeNoteId = null;
+  loadPC(); maybeAutoSnapshot(); renderPC();
   document.getElementById('loginScreen').style.display = 'none';
   document.getElementById('appScreen').style.display = 'block';
   document.getElementById('userPillAvatar').textContent = profile.name[0].toUpperCase();
@@ -1209,10 +1466,14 @@ function renderHabits() {
     btn.addEventListener('click',()=>{
       const hid=Number(btn.dataset.hdel);
       const h=habits.find(x=>x.id===hid); if(!h)return;
-      showConfirm('Delete habit?',`"${h.name}" and all its completions will be removed.`,()=>{
-        // Permanently keep all completed minutes in manualData before deleting habit
+      showConfirm('Delete habit?',`"${h.name}" and all its completions will be removed. You can restore it from Backups.`,()=>{
+        pushTrash('habit', h.name, h);
+        // REMOVE this habit's completed minutes from manualData so progress grid updates
         Object.entries(h.completions||{}).forEach(([date, done])=>{
-          if(done){ manualData[date]=(manualData[date]||0)+h.mins; }
+          if(done){
+            manualData[date]=(manualData[date]||0)-h.mins;
+            if(manualData[date]<=0) delete manualData[date];
+          }
         });
         habits=habits.filter(x=>x.id!==hid);
         saveManualData(); saveHabits(); recalcData(); renderHabits(); renderStats(); renderGrid();
@@ -1280,7 +1541,8 @@ function renderNotes(){
     delSpan.textContent='×';
     delSpan.addEventListener('click',e=>{
       e.stopPropagation();
-      showConfirm('Delete page?','This note page will be permanently deleted.',()=>{
+      showConfirm('Delete page?',`"${n.title||'Untitled'}" will be deleted. You can restore it from Backups.`,()=>{
+        pushTrash('note', n.title||'Untitled Note', n);
         notes=notes.filter(x=>x.id!==n.id);
         if(activeNoteId===n.id) activeNoteId=notes[0]?.id||null;
         saveNotes(); renderNotes();
@@ -1336,16 +1598,78 @@ document.getElementById('customCancel').addEventListener('click',closeCustom);
 document.getElementById('customOverlay').addEventListener('click',e=>{if(e.target.id==='customOverlay')closeCustom();});
 document.getElementById('customM').addEventListener('keydown',e=>{if(e.key==='Enter')submitCustom();});
 
-function showConfirm(title,msg,cb){
-  document.getElementById('confirmTitle').textContent=title;
-  document.getElementById('confirmMsg').textContent=msg;
-  document.getElementById('confirmOverlay').className='modal-overlay open';
-  confirmCb=cb;
+// ── TIMED CONFIRM (8 second countdown) ──
+let confirmCb = null;
+let _confirmTimer = null;
+const CONFIRM_SECS = 8;
+
+function showConfirm(title, msg, cb, btnLabel, btnColor) {
+  document.getElementById('confirmTitle').textContent = title;
+  document.getElementById('confirmMsg').textContent   = msg;
+  document.getElementById('confirmOverlay').className = 'modal-overlay open';
+  confirmCb = cb;
+
+  // Set button label and color (default: red Delete for destructive actions)
+  const okBtn = document.getElementById('confirmOk');
+  okBtn.textContent = btnLabel || 'Delete';
+  okBtn.style.background = btnColor || '#ef4444';
+
+  // Disable button until countdown finishes
+  okBtn.disabled = true;
+  okBtn.style.opacity = '0.4';
+  okBtn.style.cursor = 'not-allowed';
+
+  // reset bar
+  const bar   = document.getElementById('confirmTimerBar');
+  const label = document.getElementById('confirmTimerLabel');
+  bar.style.transition = 'none';
+  bar.style.width = '100%';
+  label.textContent = CONFIRM_SECS + 's';
+
+  // force reflow so transition kicks in
+  bar.getBoundingClientRect();
+  bar.style.transition = `width ${CONFIRM_SECS}s linear`;
+  bar.style.width = '0%';
+
+  let remaining = CONFIRM_SECS;
+  if (_confirmTimer) clearInterval(_confirmTimer);
+  _confirmTimer = setInterval(() => {
+    remaining--;
+    label.textContent = remaining + 's';
+    if (remaining <= 0) {
+      clearInterval(_confirmTimer);
+      _confirmTimer = null;
+      // Enable the delete button now that countdown is done
+      okBtn.disabled = false;
+      okBtn.style.opacity = '1';
+      okBtn.style.cursor = 'pointer';
+      label.textContent = 'Ready';
+    }
+  }, 1000);
 }
-function closeConfirm(){ document.getElementById('confirmOverlay').className='modal-overlay'; confirmCb=null; }
-document.getElementById('confirmOk').addEventListener('click',()=>{if(confirmCb)confirmCb();closeConfirm();});
-document.getElementById('confirmCancel').addEventListener('click',closeConfirm);
-document.getElementById('confirmOverlay').addEventListener('click',e=>{if(e.target.id==='confirmOverlay')closeConfirm();});
+
+function closeConfirm() {
+  if (_confirmTimer) { clearInterval(_confirmTimer); _confirmTimer = null; }
+  document.getElementById('confirmOverlay').className = 'modal-overlay';
+  // Reset delete button to defaults
+  const okBtn = document.getElementById('confirmOk');
+  okBtn.disabled = false;
+  okBtn.style.opacity = '1';
+  okBtn.style.cursor = 'pointer';
+  okBtn.textContent = 'Delete';
+  okBtn.style.background = '#ef4444';
+  confirmCb = null;
+}
+
+document.getElementById('confirmOk').addEventListener('click', () => {
+  if (document.getElementById('confirmOk').disabled) return; // safety check
+  if (_confirmTimer) { clearInterval(_confirmTimer); _confirmTimer = null; }
+  const cb = confirmCb;
+  closeConfirm();
+  if (cb) cb();
+});
+document.getElementById('confirmCancel').addEventListener('click', closeConfirm);
+document.getElementById('confirmOverlay').addEventListener('click', e => { if (e.target.id === 'confirmOverlay') closeConfirm(); });
 
 // ═══════════════════════════════════════════════
 //  NAV TABS
@@ -1358,7 +1682,7 @@ document.querySelectorAll('.nav-tab').forEach(tab=>{
     tab.classList.add('active');
     document.getElementById('page-'+tab.dataset.page).classList.add('active');
     if(tab.dataset.page==='notes') renderNotes();
-    if(tab.dataset.page==='progress') renderHabits();
+    if(tab.dataset.page==='progress') { renderHabits(); renderPC(); }
     if(tab.dataset.page==='timer') timerInit();
   });
 });
@@ -1603,6 +1927,564 @@ function tWireButtons(){
 }
 
 
+
+// ═══════════════════════════════════════════════
+//  BACKUP SYSTEM — two separate stores
+//  1. Weekly auto-snapshots (full data, Firebase)
+//  2. Trash (individual deleted items, Firebase)
+// ═══════════════════════════════════════════════
+const PC_KEY       = () => 'dw_pc_'      + activeProfile.id;
+const SNAP_KEY     = () => 'dw_snap_'    + activeProfile.id;  // weekly full-data snapshots
+const TRASH_KEY    = () => 'dw_trash_'   + activeProfile.id;  // recently deleted items
+const SNAP_WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+
+const PC_PERMANENT_COLS = ['DPP','Class Questions','PYQ','Test','Module'];
+const PC_PERMANENT_SUBJECTS = ['Physics','Chemistry','Biology'];
+let pcData = { cols: [...PC_PERMANENT_COLS], subjects: [] };
+
+/* ── load / save PC ── */
+// Map old/stale column names → new permanent names
+const PC_COL_REMAP = {
+  'Class Question': 'Class Questions',
+  'class question': 'Class Questions',
+  'Revision': null,        // remove old Revision col
+  'revision': null,
+};
+
+function loadPC() {
+  const saved = loadJ(PC_KEY());
+  if (saved) {
+    pcData = saved;
+
+    // ── Migrate old column names ──
+    const remapped = [];
+    const seen = new Set();
+    pcData.cols.forEach(col => {
+      let c = col;
+      if (PC_COL_REMAP.hasOwnProperty(c)) c = PC_COL_REMAP[c];  // remap
+      if (c === null) return;          // drop removed cols
+      if (seen.has(c)) return;         // deduplicate
+      seen.add(c);
+      remapped.push(c);
+    });
+    pcData.cols = remapped;
+
+    // ── Ensure permanent cols exist at the front, in order ──
+    PC_PERMANENT_COLS.forEach((col, i) => {
+      if (!pcData.cols.includes(col)) pcData.cols.splice(i, 0, col);
+    });
+
+    // ── Re-index topic checks after migration ──
+    // (checks are stored by index; after remapping the order may have shifted)
+    // Rebuild by mapping old index → new index for permanent cols
+    // For safety, only do this if the cols changed
+    pcData.subjects.forEach(subj => {
+      subj.topics.forEach(t => {
+        if (!t.checks) t.checks = {};
+      });
+    });
+
+  } else {
+    pcData = { cols: [...PC_PERMANENT_COLS], subjects: [] };
+  }
+
+  // ── Ensure permanent subjects always exist ──
+  PC_PERMANENT_SUBJECTS.forEach(name => {
+    const found = pcData.subjects.find(s => s.name === name);
+    if (!found) {
+      pcData.subjects.unshift({ name, topics: [], permanent: true });
+    } else {
+      found.permanent = true;
+      // strip any stale display artifacts
+      delete found.locked;
+      delete found.logged;
+    }
+  });
+
+  // ── Re-order: permanent subjects first ──
+  const permSubjs  = PC_PERMANENT_SUBJECTS.map(n => pcData.subjects.find(s => s.name === n)).filter(Boolean);
+  const extraSubjs = pcData.subjects.filter(s => !PC_PERMANENT_SUBJECTS.includes(s.name));
+  pcData.subjects  = [...permSubjs, ...extraSubjs];
+}
+function savePC() { saveJ_cloud(PC_KEY(), pcData); }
+
+/* ── WEEKLY AUTO-SNAPSHOT ──
+   Runs on login. If 7+ days since last snap, saves full copy of all data. */
+function maybeAutoSnapshot() {
+  if (!activeProfile) return;
+  const key   = SNAP_KEY();
+  const snaps = loadJ(key) || [];
+  const now   = Date.now();
+  const last  = snaps.length ? snaps[snaps.length - 1].ts : 0;
+  if (now - last < SNAP_WEEK_MS) return;
+  snaps.push({
+    ts:     now,
+    label:  'Week of ' + new Date(now).toLocaleDateString('en-IN', { day:'numeric', month:'short', year:'numeric' }),
+    pcData: JSON.parse(JSON.stringify(pcData)),
+    habits: JSON.parse(JSON.stringify(habits)),
+    notes:  JSON.parse(JSON.stringify(notes))
+  });
+  if (snaps.length > 52) snaps.shift();  // max 1 year
+  saveJ_cloud(key, snaps);
+}
+
+/* ── TRASH — push a deleted item ──
+   type: 'subject' | 'chapter' | 'column' | 'habit' | 'note'
+   payload: the raw object that was deleted */
+function pushTrash(type, label, payload) {
+  if (!activeProfile) return;
+  const key   = TRASH_KEY();
+  const trash = loadJ(key) || [];
+  trash.unshift({
+    id:      Date.now(),
+    ts:      Date.now(),
+    type,
+    label,
+    payload: JSON.parse(JSON.stringify(payload))
+  });
+  if (trash.length > 50) trash.pop();
+  saveJ_cloud(key, trash);
+}
+
+/* ── RESTORE from trash ── */
+window.restoreTrashItem = function(id) {
+  if (!activeProfile) return;
+  const key   = TRASH_KEY();
+  const trash = loadJ(key) || [];
+  const idx   = trash.findIndex(x => x.id === id);
+  if (idx === -1) return;
+  const item  = trash[idx];
+
+  // restore depending on type
+  if (item.type === 'subject') {
+    pcData.subjects.push(item.payload);
+    savePC(); renderPC();
+  } else if (item.type === 'chapter') {
+    // payload: { si_name, topic }  — find subject by name
+    let subj = pcData.subjects.find(s => s.name === item.payload.subjName);
+    if (!subj) { subj = { name: item.payload.subjName, topics: [] }; pcData.subjects.push(subj); }
+    subj.topics.push(item.payload.topic);
+    savePC(); renderPC();
+  } else if (item.type === 'column') {
+    // payload: { name, ci, ticksPerTopic:[{si,ti,checked}] }
+    pcData.cols.push(item.payload.name);
+    const newCi = pcData.cols.length - 1;
+    (item.payload.ticks || []).forEach(({ si, ti, checked }) => {
+      if (pcData.subjects[si] && pcData.subjects[si].topics[ti]) {
+        if (!pcData.subjects[si].topics[ti].checks) pcData.subjects[si].topics[ti].checks = {};
+        if (checked) pcData.subjects[si].topics[ti].checks[newCi] = true;
+      }
+    });
+    savePC(); renderPC();
+  } else if (item.type === 'habit') {
+    habits.push(item.payload);
+    saveHabits(); renderHabits();
+  } else if (item.type === 'note') {
+    notes.push(item.payload);
+    saveNotes(); renderNotes();
+  }
+
+  // remove from trash after restore
+  trash.splice(idx, 1);
+  saveJ_cloud(key, trash);
+  showToast('Restored!');
+  openSnapshotModal(); // refresh the modal
+}
+
+/* ── BACKUP MODAL ── */
+let _snapActiveTab = 'weekly';
+window._snapTab = (tab) => {
+  _snapActiveTab = tab;
+  document.getElementById('snapSecWeekly').style.display = tab === 'weekly' ? 'block' : 'none';
+  document.getElementById('snapSecTrash').style.display  = tab === 'trash'  ? 'block' : 'none';
+  document.getElementById('snapTabWeekly').style.background = tab === 'weekly' ? 'var(--accent)' : 'transparent';
+  document.getElementById('snapTabWeekly').style.color      = tab === 'weekly' ? '#fff' : 'var(--text2)';
+  document.getElementById('snapTabTrash').style.background  = tab === 'trash'  ? 'var(--accent)' : 'transparent';
+  document.getElementById('snapTabTrash').style.color       = tab === 'trash'  ? '#fff' : 'var(--text2)';
+};
+
+function openSnapshotModal() {
+  // render weekly snapshots
+  const snaps = (loadJ(SNAP_KEY()) || []).slice().reverse();
+  const snapList = document.getElementById('snapshotList');
+  if (!snaps.length) {
+    snapList.innerHTML = '<div style="font-size:13px;color:var(--text3);text-align:center;padding:20px">No weekly snapshots yet.\nThey save automatically every 7 days.</div>';
+  } else {
+    snapList.innerHTML = snaps.map((s, i) => `
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-radius:11px;border:1px solid var(--border);background:var(--bg);gap:10px">
+        <div>
+          <div style="font-size:12px;font-weight:700;color:var(--text)">${s.label}</div>
+          <div style="font-size:11px;color:var(--text3)">${(s.pcData?.subjects||[]).length} subjects · ${(s.habits||[]).length} habits · ${(s.notes||[]).length} notes</div>
+        </div>
+
+      </div>`).join('');
+  }
+
+  // render trash
+  const trash = loadJ(TRASH_KEY()) || [];
+  const trashList = document.getElementById('trashList');
+  if (!trash.length) {
+    trashList.innerHTML = '<div style="font-size:13px;color:var(--text3);text-align:center;padding:20px">Nothing deleted recently.</div>';
+  } else {
+    const typeLabel = { subject:'Subject', chapter:'Chapter', column:'Column', habit:'Habit', note:'Note' };
+    trashList.innerHTML = trash.map(item => `
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-radius:11px;border:1px solid var(--border);background:var(--bg);gap:10px">
+        <div>
+          <div style="font-size:12px;font-weight:700;color:var(--text)">${escHtml(item.label)}</div>
+          <div style="font-size:11px;color:var(--text3)">${typeLabel[item.type]||item.type} · ${new Date(item.ts).toLocaleDateString('en-IN',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</div>
+        </div>
+        <button onclick="restoreTrashItem(${item.id})" style="padding:7px 14px;border-radius:9px;border:none;background:#22c55e;color:#fff;font-family:'Inter',sans-serif;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap">Restore</button>
+      </div>`).join('');
+  }
+
+  document.getElementById('snapshotOverlay').className = 'modal-overlay open';
+  _snapTab(_snapActiveTab);
+}
+
+window._restoreWeeklySnap = (idx) => {
+  const snaps = loadJ(SNAP_KEY()) || [];
+  const snap  = snaps[idx];
+  if (!snap) return;
+  // Close the backup modal first so the confirm dialog is clearly visible on its own
+  document.getElementById('snapshotOverlay').className = 'modal-overlay';
+  showConfirm('Restore weekly snapshot?',
+    `Restoring "${snap.label}" will overwrite all your current data. This cannot be undone.`,
+    () => {
+      if (snap.pcData) pcData = JSON.parse(JSON.stringify(snap.pcData));
+      if (snap.habits) habits = JSON.parse(JSON.stringify(snap.habits));
+      if (snap.notes)  notes  = JSON.parse(JSON.stringify(snap.notes));
+      savePC(); saveHabits(); saveNotes();
+      renderPC(); renderHabits(); renderNotes();
+      showToast('Snapshot restored!');
+    },
+    'Restore',   // button label — NOT "Delete"
+    '#22c55e'    // green — not red
+  );
+};
+
+document.getElementById('snapshotCancel').addEventListener('click', () => {
+  document.getElementById('snapshotOverlay').className = 'modal-overlay';
+});
+
+/* ── render ── */
+// Track which subjects are expanded
+const _pcExpanded = new Set();
+
+function renderPC() {
+  const wrap = document.getElementById('pcTableWrap');
+  if (!wrap) return;
+  const totalCols = pcData.cols.length;
+
+  // per-column global % (across all subjects+topics)
+  const colTotals = new Array(totalCols).fill(0);
+  const colTicked = new Array(totalCols).fill(0);
+  pcData.subjects.forEach(subj => {
+    subj.topics.forEach(t => {
+      pcData.cols.forEach((c, ci) => {
+        colTotals[ci]++;
+        if (t.checks && t.checks[ci]) colTicked[ci]++;
+      });
+    });
+  });
+
+  // ONE unified scrollable table — header + all rows in the same <table> so columns always line up
+  let html = `<div style="overflow-x:auto;-webkit-overflow-scrolling:touch">
+  <table class="pc-table" style="border-collapse:collapse;min-width:100%">
+  <colgroup>
+    <col style="min-width:200px;width:200px">`;
+  for (let i = 0; i < totalCols; i++) html += `<col style="min-width:80px;width:80px">`;
+  html += `</colgroup>
+  <thead><tr>
+    <th class="pc-subj-col" style="text-align:left;padding-left:12px;font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--text2)">Subject</th>`;
+
+  pcData.cols.forEach((col, ci) => {
+    const isPermanentCol = ci < PC_PERMANENT_COLS.length;
+    const colPct = colTotals[ci] ? Math.round((colTicked[ci] / colTotals[ci]) * 100) : 0;
+    const colColor = colPct === 100 ? '#f59e0b' : colPct >= 50 ? 'var(--accent)' : 'var(--accent-light)';
+    html += `<th style="text-align:center;padding:6px 4px">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:3px">
+        <div style="display:flex;align-items:center;gap:3px;white-space:nowrap">
+          <span style="font-size:10px">${escHtml(col)}</span>
+          ${!isPermanentCol ? `<button class="pc-col-del" onclick="_pcDelCol(${ci})" title="Remove">×</button>` : ''}
+        </div>
+        <div style="font-size:10px;font-weight:800;color:${colColor}">${colPct}%</div>
+      </div>
+    </th>`;
+  });
+  html += `</tr></thead><tbody>`;
+
+  pcData.subjects.forEach((subj, si) => {
+    const isExpanded = _pcExpanded.has(si);
+    const isPermanent = !!subj.permanent;
+
+    let subjTicked = 0, subjTotal = 0;
+    subj.topics.forEach(t => {
+      pcData.cols.forEach((c, ci) => { subjTotal++; if (t.checks && t.checks[ci]) subjTicked++; });
+    });
+    const subjPct = subjTotal ? Math.round((subjTicked / subjTotal) * 100) : 0;
+
+    // Subject header row — spans all columns
+    html += `<tr class="pc-subj-row" style="cursor:pointer" onclick="_pcToggleExpand(${si})">
+      <td colspan="${totalCols + 1}" style="padding:0">
+        <div style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:var(--accent-dim);user-select:none">
+          <span style="font-size:12px;font-weight:700;transition:transform .2s;display:inline-block;flex-shrink:0;color:var(--accent-light)${isExpanded ? ';transform:rotate(90deg)' : ''}">&#9654;</span>
+          <div style="flex-shrink:0;filter:drop-shadow(0 0 5px rgba(122,148,122,0.5))">${pcRingSVG(subjPct, 42)}</div>`;
+
+    if (!isPermanent) {
+      html += `<span class="pc-subj-name-text" data-si="${si}" title="Click to rename" style="font-size:13px;font-weight:700;color:var(--accent);cursor:pointer;border-radius:5px;padding:2px 4px">${escHtml(subj.name)}</span>
+        <input class="pc-subj-name-edit" data-si="${si}" value="${escHtml(subj.name)}" maxlength="50" style="display:none;font-size:13px;font-weight:700;font-family:'Inter',sans-serif;color:var(--accent);border:1px solid var(--accent);border-radius:5px;padding:2px 6px;outline:none;background:var(--accent-dim);width:130px"/>`;
+    } else {
+      html += `<span style="font-size:13px;font-weight:700;color:var(--accent)">${escHtml(subj.name)}</span>`;
+    }
+
+    html += `<span style="font-size:11px;color:var(--text3);margin-left:4px">${subj.topics.length} ch</span>
+          <div style="margin-left:auto;display:flex;gap:6px;align-items:center">`;
+
+    if (!isPermanent) {
+      html += `<button class="pc-subj-del" onclick="event.stopPropagation();_pcDelSubj(${si})" title="Remove subject" style="font-size:13px;padding:2px 7px;border-radius:6px;background:#fee2e2;color:#ef4444;border:1px solid #fca5a5">✕</button>`;
+    }
+
+    html += `</div></div></td></tr>`;
+
+    // Chapter rows — only shown when expanded
+    if (isExpanded) {
+      if (!subj.topics.length) {
+        html += `<tr><td colspan="${totalCols + 1}" style="padding:8px 20px 4px;font-size:12px;color:var(--text3);background:var(--surface)">No chapters yet — add one below.</td></tr>`;
+      } else {
+        subj.topics.forEach((topic, ti) => {
+          const rowTicked = pcData.cols.filter((c, ci) => topic.checks && topic.checks[ci]).length;
+          const rowPct    = totalCols ? Math.round((rowTicked / totalCols) * 100) : 0;
+
+          html += `<tr style="background:var(--surface)"><td style="padding:6px 4px 6px 12px;border-bottom:1px solid var(--border)">
+            <div style="display:flex;align-items:center;gap:6px;padding-left:12px">
+              <button class="pc-topic-del" onclick="_pcDelTopic(${si},${ti})" title="Remove" style="flex-shrink:0">&#215;</button>
+              <span style="font-size:12px;font-weight:500;color:var(--text)">${escHtml(topic.name)}</span>
+              <span style="font-size:10px;font-weight:700;color:var(--accent);white-space:nowrap;margin-left:4px">${rowPct}%</span>
+            </div>
+          </td>`;
+
+          pcData.cols.forEach((col, ci) => {
+            const checked = !!(topic.checks && topic.checks[ci]);
+            html += `<td class="pc-cell" style="text-align:center;border-bottom:1px solid var(--border);padding:4px 2px">
+              <div class="pc-box${checked ? ' checked' : ''}" data-si="${si}" data-ti="${ti}" data-ci="${ci}" style="margin:0 auto"></div>
+            </td>`;
+          });
+          html += `</tr>`;
+        });
+      }
+      // Inline "Add Chapter" row
+      html += `<tr style="background:var(--surface)"><td colspan="${totalCols + 1}" style="padding:8px 12px 10px 36px;border-bottom:1px solid var(--border)">
+        <div style="display:flex;gap:8px;align-items:center">
+          <input class="pc-input pc-chapter-input" data-si="${si}" placeholder="Add chapter…" maxlength="80"
+            style="flex:1;padding:7px 12px;font-size:12px;border-radius:10px;max-width:320px"/>
+          <button class="pc-btn pc-chapter-add-btn" data-si="${si}"
+            style="padding:7px 14px;font-size:12px;border-radius:10px">+ Add</button>
+        </div>
+      </td></tr>`;
+    }
+  });
+
+  html += `</tbody></table></div>`;
+  wrap.innerHTML = html;
+
+  // wire checkboxes
+  wrap.querySelectorAll('.pc-box').forEach(box => {
+    box.addEventListener('click', e => {
+      e.stopPropagation();
+      const si = parseInt(box.dataset.si), ti = parseInt(box.dataset.ti), ci = parseInt(box.dataset.ci);
+      _pcToggle(si, ti, ci);
+    });
+  });
+
+  // wire inline chapter add buttons
+  wrap.querySelectorAll('.pc-chapter-add-btn').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      const si = parseInt(btn.dataset.si);
+      const input = wrap.querySelector(`.pc-chapter-input[data-si="${si}"]`);
+      const name = input ? input.value.trim() : '';
+      if (!name) { showToast('Enter a chapter name!'); return; }
+      if (!pcData.subjects[si]) return;
+      pcData.subjects[si].topics.push({ name, checks: {} });
+      savePC(); renderPC();
+      showToast(`✓ Added "${name}" to ${pcData.subjects[si]?.name || ''}`);
+    });
+  });
+  wrap.querySelectorAll('.pc-chapter-input').forEach(inp => {
+    inp.addEventListener('keydown', e => {
+      if (e.key === 'Enter') {
+        e.stopPropagation();
+        const si = parseInt(inp.dataset.si);
+        const btn = wrap.querySelector(`.pc-chapter-add-btn[data-si="${si}"]`);
+        if (btn) btn.click();
+      }
+    });
+    inp.addEventListener('click', e => e.stopPropagation());
+  });
+
+  // wire subject rename (non-permanent only)
+  wrap.querySelectorAll('.pc-subj-name-text').forEach(el => {
+    el.addEventListener('click', e => {
+      e.stopPropagation();
+      const edit = el.nextElementSibling;
+      el.style.display = 'none';
+      edit.style.display = 'inline-block';
+      edit.focus(); edit.select();
+    });
+  });
+  wrap.querySelectorAll('.pc-subj-name-edit').forEach(inp => {
+    const finish = () => {
+      const si = parseInt(inp.dataset.si);
+      const subj = pcData.subjects[si];
+      if (subj && inp.value.trim()) { subj.name = inp.value.trim(); savePC(); }
+      renderPC();
+    };
+    inp.addEventListener('blur', finish);
+    inp.addEventListener('keydown', e => { if(e.key==='Enter') inp.blur(); if(e.key==='Escape') inp.blur(); });
+    inp.addEventListener('click', e => e.stopPropagation());
+  });
+}
+
+/* ── ring SVG (compact) ── */
+function pcRingSVG(pct, size = 44) {
+  const r      = size * 0.38;
+  const cx     = size / 2;
+  const circ   = 2 * Math.PI * r;
+  const offset = circ - (pct / 100) * circ;
+  const color  = pct === 100 ? '#f59e0b' : pct >= 50 ? 'var(--accent)' : 'var(--accent-light)';
+  const glowColor = pct === 100 ? 'rgba(245,158,11,0.6)' : 'rgba(122,148,122,0.5)';
+  const strokeW = size >= 36 ? 3.5 : 3;
+  const fontSize = size >= 36 ? 9 : size < 24 ? 6 : 7;
+  return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" style="transform:rotate(-90deg);flex-shrink:0;filter:drop-shadow(0 0 4px ${glowColor})">
+    <circle cx="${cx}" cy="${cx}" r="${r}" fill="none" stroke="var(--border)" stroke-width="${strokeW}"/>
+    <circle cx="${cx}" cy="${cx}" r="${r}" fill="none" stroke="${color}" stroke-width="${strokeW}"
+      stroke-linecap="round" stroke-dasharray="${circ}" stroke-dashoffset="${offset}"
+      style="transition:stroke-dashoffset .5s cubic-bezier(.34,1.56,.64,1)"/>
+    <text x="${cx}" y="${cx}" text-anchor="middle" dominant-baseline="middle"
+      style="transform:rotate(90deg);transform-origin:${cx}px ${cx}px;font-size:${fontSize}px;font-weight:800;fill:var(--text);font-family:'Inter',sans-serif">${pct}%</text>
+  </svg>`;
+}
+
+window._pcToggleExpand = (si) => {
+  if (_pcExpanded.has(si)) _pcExpanded.delete(si);
+  else _pcExpanded.add(si);
+  renderPC();
+};
+
+/* ── toggle / del ── */
+window._pcToggle = (si, ti, ci) => {
+  if (!pcData.subjects[si] || !pcData.subjects[si].topics[ti]) return;
+  const topic = pcData.subjects[si].topics[ti];
+  if (!topic.checks) topic.checks = {};
+  topic.checks[ci] = !topic.checks[ci];
+  savePC();
+  renderPC();
+};
+
+window._pcDelSubj = (si) => {
+  const subj = pcData.subjects[si];
+  if (!subj) return;
+  if (subj.permanent) { showToast('Physics, Chemistry & Biology are permanent subjects'); return; }
+  showConfirm('Delete subject?', `"${subj.name}" and all its chapters will be removed. You can restore it from Backups.`, () => {
+    pushTrash('subject', subj.name, subj);
+    pcData.subjects.splice(si, 1);
+    savePC(); renderPC();
+  });
+};
+
+window._pcDelTopic = (si, ti) => {
+  const subj  = pcData.subjects[si];
+  const topic = subj?.topics[ti];
+  if (!topic) return;
+  showConfirm('Delete chapter?', `"${topic.name}" will be removed. You can restore it from Backups.`, () => {
+    pushTrash('chapter', `${topic.name} (${subj.name})`, { subjName: subj.name, topic });
+    subj.topics.splice(ti, 1);
+    savePC(); renderPC();
+  });
+};
+
+window._pcDelCol = (ci) => {
+  if (ci < PC_PERMANENT_COLS.length) { showToast('The 5 default columns can\'t be deleted'); return; }
+  if (pcData.cols.length <= 1) { showToast('Need at least 1 column'); return; }
+  const name = pcData.cols[ci];
+  // capture ticks before deletion so we can restore them
+  const ticks = [];
+  pcData.subjects.forEach((s, si) => s.topics.forEach((t, ti) => {
+    ticks.push({ si, ti, checked: !!(t.checks && t.checks[ci]) });
+  }));
+  showConfirm('Delete column?', `Column "${name}" will be removed. You can restore it from Backups.`, () => {
+    pushTrash('column', `Column: ${name}`, { name, ticks });
+    pcData.cols.splice(ci, 1);
+    pcData.subjects.forEach(s => s.topics.forEach(t => {
+      if (!t.checks) return;
+      const newChecks = {};
+      Object.keys(t.checks).forEach(k => {
+        const ki = parseInt(k);
+        if (ki < ci) newChecks[ki] = t.checks[k];
+        else if (ki > ci) newChecks[ki - 1] = t.checks[k];
+      });
+      t.checks = newChecks;
+    }));
+    savePC(); renderPC();
+  });
+};
+
+/* ── Add Column (inline input) ── */
+document.getElementById('pcAddColBtn').addEventListener('click', () => {
+  const row = document.getElementById('pcColAddRow');
+  const isOpen = row.style.display === 'flex';
+  row.style.display = isOpen ? 'none' : 'flex';
+  if (!isOpen) { document.getElementById('pcColNameInput').value = ''; document.getElementById('pcColNameInput').focus(); }
+});
+
+document.getElementById('pcColConfirmBtn').addEventListener('click', () => {
+  const name = document.getElementById('pcColNameInput').value.trim();
+  if (!name) { showToast('Enter a column name!'); return; }
+  pcData.cols.push(name);
+  document.getElementById('pcColAddRow').style.display = 'none';
+  document.getElementById('pcColNameInput').value = '';
+  savePC(); renderPC();
+});
+
+document.getElementById('pcColNameInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter')  document.getElementById('pcColConfirmBtn').click();
+  if (e.key === 'Escape') document.getElementById('pcColAddRow').style.display = 'none';
+});
+
+/* ── Add Subject button ── */
+document.getElementById('pcAddSubjBtn').addEventListener('click', () => {
+  const row = document.getElementById('pcSubjAddRow');
+  const isOpen = row.style.display === 'flex';
+  row.style.display = isOpen ? 'none' : 'flex';
+  if (!isOpen) { document.getElementById('pcSubjInput').value = ''; document.getElementById('pcSubjInput').focus(); }
+});
+
+/* ── Add Subject (from inline row) ── */
+document.getElementById('pcAddTopicBtn').addEventListener('click', () => {
+  const subjName = document.getElementById('pcSubjInput').value.trim();
+  if (!subjName) { showToast('Enter a subject name!'); return; }
+
+  const exists = pcData.subjects.find(x => x.name.toLowerCase() === subjName.toLowerCase());
+  if (exists) { showToast('Subject already exists!'); return; }
+
+  pcData.subjects.push({ name: subjName, topics: [] });
+  document.getElementById('pcSubjInput').value = '';
+  document.getElementById('pcSubjAddRow').style.display = 'none';
+  savePC(); renderPC();
+  showToast(`✓ Added subject "${subjName}"`);
+});
+
+document.getElementById('pcSubjInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('pcAddTopicBtn').click();
+  if (e.key === 'Escape') document.getElementById('pcSubjAddRow').style.display = 'none';
+});
+
+/* ── Snapshot / backup button ── */
+document.getElementById('pcRestoreBtn').addEventListener('click', openSnapshotModal);
+
+/* ── Weekly auto-snapshot trigger ── */
+// Called after launchApp when profile is ready
+
 // ═══════════════════════════════════════════════
 //  AI STUDY  —  PDF Notes + PDF Quiz
 // ═══════════════════════════════════════════════
@@ -1732,11 +2614,9 @@ document.getElementById('aiQuizPdf').addEventListener('change', async e => {
     document.getElementById('aiQuizFileName').textContent = '📄 ' + file.name;
     document.getElementById('aiQuizFileName').style.display = 'block';
     document.getElementById('aiQuizBtn').style.display = 'block';
-    document.getElementById('aiQuizArea').style.display = 'none';
+    document.getElementById('ntaSubjectLabel').textContent = file.name.replace(/\.pdf$/i,'').slice(0,40);
     document.getElementById('aiQuizError').style.display = 'none';
-  } catch(err) {
-    showToast('Could not read PDF');
-  }
+  } catch(err) { showToast('Could not read PDF'); }
   e.target.value = '';
 });
 
@@ -1745,11 +2625,10 @@ document.getElementById('aiQuizBtn').addEventListener('click', async () => {
   const btn = document.getElementById('aiQuizBtn');
   btn.disabled = true;
   document.getElementById('aiQuizLoading').style.display = 'flex';
-  document.getElementById('aiQuizArea').style.display = 'none';
   document.getElementById('aiQuizError').style.display = 'none';
   try {
     const raw = await callClaude(_aiQuizPdf,
-`You are a quiz generator. Read this PDF and create exactly 5 multiple-choice questions.
+`You are a quiz generator. Read this PDF and create exactly 10 multiple-choice questions.
 
 Reply ONLY with a JSON array. No explanation, no markdown, no extra text. Just the raw JSON:
 
@@ -1762,14 +2641,24 @@ Reply ONLY with a JSON array. No explanation, no markdown, no extra text. Just t
   }
 ]
 
-"answer" is the 0-based index of the correct option. Make questions genuinely test understanding.`,
-      1500
+"answer" is the 0-based index of the correct option. Make questions genuinely test understanding. Create exactly 10 questions.`,
+      2000
     );
-    const clean = raw.replace(/^```(?:json)?\n?/,'').replace(/```$/,'').trim();
+    const clean = raw.replace(/^```(?:json)?\n?/,'').replace(/\n?```$/,'').trim();
     _quizQs  = JSON.parse(clean);
-    _quizAns = new Array(_quizQs.length).fill(null);
-    renderQuiz();
-    document.getElementById('aiQuizArea').style.display = 'block';
+    _quizAns = new Array(_quizQs.length).fill(null);  // null=not visited, undefined=not answered, number=answered
+    _quizMarked = new Array(_quizQs.length).fill(false);
+    _quizVisited = new Array(_quizQs.length).fill(false);
+    _quizSubmitted = false;
+    _ntaCurrent = 0;
+    _quizVisited[0] = true;
+    document.getElementById('aiQuizUploadCard').style.display = 'none';
+    document.getElementById('ntaQuizWrap').classList.add('active');
+    document.getElementById('ntaResult').style.display = 'none';
+    document.getElementById('ntaQuestionArea').style.display = '';
+    document.querySelector('.nta-sidebar').style.display = '';
+    _ntaRender();
+    _ntaStartTimer();
   } catch(err) {
     const el = document.getElementById('aiQuizError');
     el.className = 'ai-error';
@@ -1780,44 +2669,283 @@ Reply ONLY with a JSON array. No explanation, no markdown, no extra text. Just t
   btn.disabled = false;
 });
 
-function renderQuiz() {
-  const area = document.getElementById('aiQuizArea');
-  let html = '';
-  _quizQs.forEach((q, qi) => {
-    const answered = _quizAns[qi] !== null;
-    html += `<div class="quiz-q">
-      <div class="quiz-q-num">Question ${qi + 1} of ${_quizQs.length}</div>
-      <div class="quiz-q-text">${escHtml(q.question)}</div>
-      <div class="quiz-options">`;
-    q.options.forEach((opt, oi) => {
-      const isCorrect = oi === q.answer;
-      const isChosen  = _quizAns[qi] === oi;
-      let cls = 'quiz-opt';
-      if (answered && isCorrect)           cls += ' correct';
-      if (answered && isChosen && !isCorrect) cls += ' wrong';
-      html += `<button class="${cls}" ${answered ? 'disabled' : ''} onclick="_answerQuiz(${qi},${oi})">${escHtml(opt)}</button>`;
-    });
-    html += '</div>';
-    if (answered) {
-      html += `<div class="quiz-explain">💡 ${escHtml(q.explanation)}</div>`;
-    }
-    html += '</div>';
-  });
+// ── NTA STATE ──
+let _ntaCurrent = 0;
+let _quizMarked  = [];
+let _quizVisited = [];
+let _quizSubmitted = false;
+let _ntaTimerInterval = null;
+let _ntaTimerSeconds = 0;
 
-  const totalAnswered = _quizAns.filter(a => a !== null).length;
-  if (totalAnswered === _quizQs.length) {
-    const correct = _quizAns.filter((a, i) => a === _quizQs[i]?.answer).length;
-    const pct = Math.round((correct / _quizQs.length) * 100);
-    const emoji = pct === 100 ? '🏆' : pct >= 80 ? '🎯' : pct >= 60 ? '👍' : '📚';
-    html += `<div class="quiz-score">${emoji} ${correct} / ${_quizQs.length}</div>
-             <div class="quiz-score-sub">${pct}% — ${pct===100?'Perfect!':pct>=80?'Great job!':pct>=60?'Good effort!':'Keep studying!'}</div>
-             <button class="quiz-retry-btn" onclick="_retryQuiz()">🔄 Try Again</button>`;
-  }
-  area.innerHTML = html;
+function _ntaStartTimer() {
+  if (_ntaTimerInterval) clearInterval(_ntaTimerInterval);
+  _ntaTimerSeconds = 0;
+  const maxSecs = _quizQs.length * 72; // 1.2 min per question (NTA standard)
+  _ntaTimerSeconds = maxSecs;
+  _updateTimerLabel();
+  _ntaTimerInterval = setInterval(() => {
+    _ntaTimerSeconds--;
+    _updateTimerLabel();
+    if (_ntaTimerSeconds <= 0) {
+      clearInterval(_ntaTimerInterval);
+      if (!_quizSubmitted) {
+        _quizSubmitted = true;
+        _ntaShowResult();
+        showToast('⏰ Time up! Quiz submitted automatically.');
+      }
+    }
+  }, 1000);
 }
 
-window._answerQuiz = (qi, oi) => { _quizAns[qi] = oi; renderQuiz(); };
-window._retryQuiz  = () => { _quizAns = new Array(_quizQs.length).fill(null); renderQuiz(); };
+function _ntaStopTimer() {
+  if (_ntaTimerInterval) { clearInterval(_ntaTimerInterval); _ntaTimerInterval = null; }
+}
+
+function _updateTimerLabel() {
+  const m = Math.floor(_ntaTimerSeconds / 60);
+  const s = _ntaTimerSeconds % 60;
+  const str = String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
+  const el = document.getElementById('ntaTimerLabel');
+  if (el) {
+    el.textContent = '⏱ ' + str;
+    el.style.color = _ntaTimerSeconds <= 60 ? '#fca5a5' : '#fff';
+  }
+}
+
+const OPTION_LABELS = ['A','B','C','D','E','F'];
+
+function _ntaStatusOf(qi) {
+  if (_quizSubmitted) return 'submitted';
+  if (!_quizVisited[qi]) return 'not-visited';
+  if (_quizMarked[qi] && _quizAns[qi] !== null) return 'marked-answered';
+  if (_quizMarked[qi]) return 'marked';
+  if (_quizAns[qi] !== null) return 'answered';
+  return 'not-answered';
+}
+
+function _ntaRender() {
+  const q  = _quizQs[_ntaCurrent];
+  const qi = _ntaCurrent;
+  const total = _quizQs.length;
+
+  // Q number
+  document.getElementById('ntaQNum').textContent = `Question ${qi + 1} of ${total}`;
+
+  // Status badge
+  const badge = document.getElementById('ntaQBadge');
+  const st = _ntaStatusOf(qi);
+  const badgeMap = {
+    'not-visited':     ['Not Visited',      '#6b7280','#fff'],
+    'not-answered':    ['Not Answered',     '#ef4444','#fff'],
+    'answered':        ['Answered',          '#22c55e','#fff'],
+    'marked':          ['Marked for Review', '#8b5cf6','#fff'],
+    'marked-answered': ['Answered & Marked', '#8b5cf6','#fff'],
+    'submitted':       ['Submitted',         '#f59e0b','#fff'],
+  };
+  const [label,bg,fg] = badgeMap[st] || badgeMap['not-answered'];
+  badge.textContent = label;
+  badge.style.background = bg; badge.style.color = fg;
+
+  // Question text
+  document.getElementById('ntaQText').textContent = q.question;
+
+  // Options
+  const optEl = document.getElementById('ntaOptions');
+  optEl.innerHTML = '';
+  q.options.forEach((opt, oi) => {
+    const btn = document.createElement('button');
+    btn.className = 'nta-opt';
+    btn.disabled = _quizSubmitted;
+
+    let cls = 'nta-opt';
+    if (_quizSubmitted) {
+      if (oi === q.answer)                          cls += ' correct-final';
+      else if (_quizAns[qi] === oi)                 cls += ' wrong-final';
+    } else {
+      if (_quizAns[qi] === oi)                      cls += ' selected';
+    }
+    btn.className = cls;
+
+    btn.innerHTML = `<span class="nta-opt-label">${OPTION_LABELS[oi]}</span><span class="nta-opt-text">${escHtml(opt)}</span>`;
+    if (!_quizSubmitted) {
+      btn.addEventListener('click', () => {
+        _quizAns[qi] = oi;
+        _quizVisited[qi] = true;
+        _ntaRender();
+      });
+    }
+    optEl.appendChild(btn);
+  });
+
+  // Explanation (only after submit)
+  const explEl = document.getElementById('ntaExplain');
+  if (_quizSubmitted && q.explanation) {
+    explEl.textContent = '💡 ' + q.explanation;
+    explEl.style.display = 'block';
+  } else {
+    explEl.style.display = 'none';
+  }
+
+  // Action buttons visibility
+  document.getElementById('ntaBtnSaveNext').style.display = _quizSubmitted ? 'none' : '';
+  document.getElementById('ntaBtnMark').style.display     = _quizSubmitted ? 'none' : '';
+  document.getElementById('ntaBtnClear').style.display    = _quizSubmitted ? 'none' : '';
+  document.getElementById('ntaBtnSubmit').style.display   = _quizSubmitted ? 'none' : '';
+
+  // Mark button label
+  document.getElementById('ntaBtnMark').textContent = _quizMarked[qi]
+    ? 'UNMARK REVIEW' : 'SAVE & MARK FOR REVIEW';
+
+  // Back/Next
+  document.getElementById('ntaBtnBack').disabled = (qi === 0);
+  document.getElementById('ntaBtnNext').disabled = (qi === total - 1);
+
+  // Palette
+  _ntaRenderPalette();
+  _ntaRenderCounts();
+}
+
+function _ntaRenderPalette() {
+  const el = document.getElementById('ntaPalette');
+  el.innerHTML = '';
+  _quizQs.forEach((q, qi) => {
+    const btn = document.createElement('button');
+    btn.className = 'nta-pq';
+    btn.textContent = qi + 1;
+    const st = _ntaStatusOf(qi);
+    if (qi === _ntaCurrent)                  btn.classList.add('pq-current');
+    else if (st === 'answered')              btn.classList.add('pq-answered');
+    else if (st === 'not-answered')          btn.classList.add('pq-not-answered');
+    else if (st === 'marked')               btn.classList.add('pq-marked');
+    else if (st === 'marked-answered')       btn.classList.add('pq-marked-answered');
+    btn.addEventListener('click', () => {
+      _quizVisited[_ntaCurrent] = true;
+      _ntaCurrent = qi;
+      _quizVisited[qi] = true;
+      _ntaRender();
+    });
+    el.appendChild(btn);
+  });
+}
+
+function _ntaRenderCounts() {
+  const counts = {notVisited:0, notAnswered:0, answered:0, marked:0};
+  _quizQs.forEach((q, qi) => {
+    const st = _ntaStatusOf(qi);
+    if (st === 'not-visited')          counts.notVisited++;
+    else if (st === 'not-answered')    counts.notAnswered++;
+    else if (st === 'answered')        counts.answered++;
+    else if (st === 'marked' || st === 'marked-answered') counts.marked++;
+  });
+  document.getElementById('ntaCountNotVisited').textContent  = counts.notVisited;
+  document.getElementById('ntaCountNotAnswered').textContent = counts.notAnswered;
+  document.getElementById('ntaCountAnswered').textContent    = counts.answered;
+  document.getElementById('ntaCountMarked').textContent      = counts.marked;
+}
+
+// Buttons
+document.getElementById('ntaBtnSaveNext').addEventListener('click', () => {
+  _quizVisited[_ntaCurrent] = true;
+  if (_ntaCurrent < _quizQs.length - 1) {
+    _ntaCurrent++;
+    _quizVisited[_ntaCurrent] = true;
+  }
+  _ntaRender();
+});
+
+document.getElementById('ntaBtnMark').addEventListener('click', () => {
+  _quizVisited[_ntaCurrent] = true;
+  _quizMarked[_ntaCurrent] = !_quizMarked[_ntaCurrent];
+  if (_ntaCurrent < _quizQs.length - 1) {
+    _ntaCurrent++;
+    _quizVisited[_ntaCurrent] = true;
+  }
+  _ntaRender();
+});
+
+document.getElementById('ntaBtnClear').addEventListener('click', () => {
+  _quizAns[_ntaCurrent] = null;
+  _quizMarked[_ntaCurrent] = false;
+  _ntaRender();
+});
+
+document.getElementById('ntaBtnBack').addEventListener('click', () => {
+  if (_ntaCurrent > 0) { _ntaCurrent--; _ntaRender(); }
+});
+
+document.getElementById('ntaBtnNext').addEventListener('click', () => {
+  if (_ntaCurrent < _quizQs.length - 1) {
+    _ntaCurrent++;
+    _quizVisited[_ntaCurrent] = true;
+    _ntaRender();
+  }
+});
+
+document.getElementById('ntaBtnSubmit').addEventListener('click', () => {
+  const answered = _quizAns.filter(a => a !== null).length;
+  const unanswered = _quizQs.length - answered;
+  const msg = unanswered > 0
+    ? `You have ${unanswered} unanswered question${unanswered>1?'s':''}. Submit anyway?`
+    : `Submit all ${_quizQs.length} answers?`;
+  showConfirm('Submit Quiz?', msg, () => {
+    _quizSubmitted = true;
+    _ntaStopTimer();
+    _ntaShowResult();
+  }, 'Submit', '#22c55e');
+});
+
+function _ntaShowResult() {
+  const total   = _quizQs.length;
+  const correct = _quizAns.filter((a,i) => a === _quizQs[i]?.answer).length;
+  const wrong   = _quizAns.filter((a,i) => a !== null && a !== _quizQs[i]?.answer).length;
+  const skipped = _quizAns.filter(a => a === null).length;
+  const pct     = Math.round((correct / total) * 100);
+  const emoji   = pct===100?'🏆':pct>=80?'🎯':pct>=60?'👍':pct>=40?'📚':'💪';
+
+  document.getElementById('ntaResult').style.display = 'block';
+  document.getElementById('ntaQuestionArea').style.display = '';
+  document.querySelector('.nta-sidebar').style.display = '';
+
+  document.getElementById('ntaResultScore').textContent = `${emoji} ${correct} / ${total}`;
+  document.getElementById('ntaResultSub').textContent   = `${pct}% — ${pct===100?'Perfect score!':pct>=80?'Excellent!':pct>=60?'Good job!':pct>=40?'Keep practising!':'Need more revision!'}`;
+  document.getElementById('ntaResultBreakdown').innerHTML = `
+    <div class="nta-rb-item"><div class="nta-rb-num" style="color:#22c55e">${correct}</div><div class="nta-rb-label">Correct</div></div>
+    <div class="nta-rb-item"><div class="nta-rb-num" style="color:#ef4444">${wrong}</div><div class="nta-rb-label">Wrong</div></div>
+    <div class="nta-rb-item"><div class="nta-rb-num" style="color:#6b7280">${skipped}</div><div class="nta-rb-label">Skipped</div></div>`;
+
+  // Show answers for all questions in palette / question area
+  _ntaCurrent = 0;
+  _ntaRender();
+
+  // Scroll to result
+  document.getElementById('ntaResult').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+window._ntaRetry = () => {
+  _quizAns      = new Array(_quizQs.length).fill(null);
+  _quizMarked   = new Array(_quizQs.length).fill(false);
+  _quizVisited  = new Array(_quizQs.length).fill(false);
+  _quizSubmitted = false;
+  _ntaCurrent   = 0;
+  _quizVisited[0] = true;
+  document.getElementById('ntaResult').style.display = 'none';
+  document.getElementById('ntaQuestionArea').style.display = '';
+  document.querySelector('.nta-sidebar').style.display = '';
+  _ntaRender();
+  _ntaStartTimer();
+};
+
+window._ntaNewUpload = () => {
+  _ntaStopTimer();
+  _quizQs = []; _quizAns = []; _quizMarked = []; _quizVisited = [];
+  _aiQuizPdf = null; _quizSubmitted = false; _ntaCurrent = 0;
+  document.getElementById('ntaQuizWrap').classList.remove('active');
+  document.getElementById('aiQuizUploadCard').style.display = 'block';
+  document.getElementById('aiQuizFileName').style.display = 'none';
+  document.getElementById('aiQuizBtn').style.display = 'none';
+  document.getElementById('ntaResult').style.display = 'none';
+  document.getElementById('ntaTimerLabel').textContent = '';
+};
 
 // ── MODE SWITCHER ──
 document.getElementById('aiModeNotes').addEventListener('click', () => {
