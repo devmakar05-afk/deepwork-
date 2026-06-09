@@ -3,45 +3,32 @@ const cors = require('cors');
 const https = require('https');
 
 const app = express();
+app.use(cors({ origin: '*', methods: ['GET','POST','OPTIONS'], allowedHeaders: ['Content-Type'] }));
+app.options('*', cors());
+app.use(express.json({ limit: '100mb' }));
 
-app.use(cors({ origin: '*' }));
-app.use(express.json({ limit: '50mb' }));
-
-app.get('/', (req, res) => {
-  res.send('DeepWork AI Backend is running ✅');
-});
+app.get('/', (req, res) => res.send('DeepWork AI Backend running ✅'));
 
 app.post('/ai', (req, res) => {
   try {
-    const { base64, prompt, maxTokens } = req.body;
+    const { base64, mediaType, prompt, maxTokens } = req.body;
+    if (!base64 || !prompt) return res.status(400).json({ error: 'Missing base64 or prompt' });
+    if (!process.env.ANTHROPIC_API_KEY) return res.status(500).json({ error: 'API key not configured' });
 
-    if (!base64 || !prompt) {
-      return res.status(400).json({ error: 'Missing base64 or prompt' });
-    }
+    // Determine content type — PDF or image
+    const type = mediaType || 'application/pdf';
+    const isImage = type.startsWith('image/');
 
-    if (!process.env.ANTHROPIC_API_KEY) {
-      return res.status(500).json({ error: 'API key not configured on server' });
-    }
+    const contentBlock = isImage
+      ? { type: 'image', source: { type: 'base64', media_type: type, data: base64 } }
+      : { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: base64 } };
 
     const body = JSON.stringify({
       model: 'claude-sonnet-4-20250514',
       max_tokens: maxTokens || 2000,
       messages: [{
         role: 'user',
-        content: [
-          {
-            type: 'document',
-            source: {
-              type: 'base64',
-              media_type: 'application/pdf',
-              data: base64
-            }
-          },
-          {
-            type: 'text',
-            text: prompt
-          }
-        ]
+        content: [ contentBlock, { type: 'text', text: prompt } ]
       }]
     });
 
@@ -59,34 +46,23 @@ app.post('/ai', (req, res) => {
 
     const apiReq = https.request(options, (apiRes) => {
       let data = '';
-      apiRes.on('data', (chunk) => { data += chunk; });
+      apiRes.on('data', chunk => data += chunk);
       apiRes.on('end', () => {
         try {
           const parsed = JSON.parse(data);
-          if (parsed.error) {
-            return res.status(500).json({ error: parsed.error.message });
-          }
-          const text = parsed.content && parsed.content[0] && parsed.content[0].text;
-          res.json({ text: text || '' });
-        } catch (e) {
-          res.status(500).json({ error: 'Failed to parse API response' });
-        }
+          if (parsed.error) return res.status(500).json({ error: parsed.error.message });
+          res.json({ text: parsed.content?.[0]?.text || '' });
+        } catch(e) { res.status(500).json({ error: 'Parse error: ' + e.message }); }
       });
     });
 
-    apiReq.on('error', (e) => {
-      res.status(500).json({ error: 'Request failed: ' + e.message });
-    });
-
+    apiReq.on('error', e => res.status(500).json({ error: e.message }));
     apiReq.write(body);
     apiReq.end();
-
-  } catch (err) {
+  } catch(err) {
     res.status(500).json({ error: err.message });
   }
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log('Server running on port ' + PORT);
-});
+app.listen(PORT, () => console.log('Server running on port ' + PORT));
