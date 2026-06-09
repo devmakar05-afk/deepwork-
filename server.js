@@ -1,13 +1,20 @@
 const express = require('express');
-const cors = require('cors');
 const https = require('https');
 
 const app = express();
-app.use(cors({ origin: '*', methods: ['GET','POST','OPTIONS'], allowedHeaders: ['Content-Type'] }));
-app.options('*', cors());
+
+// Manual CORS — works on every platform
+app.use((req, res, next) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  if (req.method === 'OPTIONS') return res.sendStatus(200);
+  next();
+});
+
 app.use(express.json({ limit: '100mb' }));
 
-app.get('/', (req, res) => res.send('DeepWork AI Backend running ✅'));
+app.get('/', (req, res) => res.send('DeepWork AI Backend running'));
 
 app.post('/ai', (req, res) => {
   try {
@@ -15,7 +22,6 @@ app.post('/ai', (req, res) => {
     if (!base64 || !prompt) return res.status(400).json({ error: 'Missing base64 or prompt' });
     if (!process.env.ANTHROPIC_API_KEY) return res.status(500).json({ error: 'API key not configured' });
 
-    // Determine content type — PDF or image
     const type = mediaType || 'application/pdf';
     const isImage = type.startsWith('image/');
 
@@ -26,10 +32,7 @@ app.post('/ai', (req, res) => {
     const body = JSON.stringify({
       model: 'claude-sonnet-4-20250514',
       max_tokens: maxTokens || 2000,
-      messages: [{
-        role: 'user',
-        content: [ contentBlock, { type: 'text', text: prompt } ]
-      }]
+      messages: [{ role: 'user', content: [contentBlock, { type: 'text', text: prompt }] }]
     });
 
     const options = {
