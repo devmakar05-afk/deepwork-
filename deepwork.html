@@ -1014,9 +1014,31 @@ async function createProfile() {
   await launchApp(newP);
 }
 
+async function purgeJune1to8_2026() {
+  // One-time cleanup: remove June 1–8 2026 test data from data, manualData, and habit completions
+  const datesToRemove = ['2026-06-01','2026-06-02','2026-06-03','2026-06-04','2026-06-05','2026-06-06','2026-06-07','2026-06-08'];
+  let changed = false;
+  datesToRemove.forEach(d => {
+    if (data[d] !== undefined)       { delete data[d];       changed = true; }
+    if (manualData[d] !== undefined) { delete manualData[d]; changed = true; }
+  });
+  habits.forEach(h => {
+    if (!h.completions) return;
+    datesToRemove.forEach(d => {
+      if (h.completions[d]) { delete h.completions[d]; changed = true; }
+    });
+  });
+  if (changed) {
+    recalcData();
+    saveManualData();
+    saveHabits();
+  }
+}
+
 async function launchApp(profile) {
   activeProfile = profile;
   await loadProfileData(profile.id);
+  await purgeJune1to8_2026();
   yearOffset = 0; habitMonthOffset = 0; activeNoteId = null;
   loadPC(); maybeAutoSnapshot(); renderPC();
   document.getElementById('loginScreen').style.display = 'none';
