@@ -2512,7 +2512,7 @@ async function readPdfBase64(file) {
 
 // Call backend proxy → Claude API
 async function callClaude(base64, prompt, maxTokens = 2000, mediaType = 'application/pdf') {
-  const BACKEND = 'https://deepwork-ai-imt2.onrender.com/ai';
+  const BACKEND = 'https://deepwork-production-1217.up.railway.app/ai';
   const resp = await fetch(BACKEND, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
