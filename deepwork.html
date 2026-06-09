@@ -692,8 +692,8 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
         <p style="font-size:12px;color:var(--text2);margin-bottom:16px">Upload any class PDF — AI reads it and gives you clean study notes.</p>
         <div class="ai-upload-area" id="aiNotesUploadArea">
           <div class="ai-upload-icon">📄</div>
-          <div class="ai-upload-text">Tap to upload PDF</div>
-          <input type="file" id="aiNotesPdf" accept=".pdf" style="display:none"/>
+          <div class="ai-upload-text">Tap to upload PDF or image</div>
+          <input type="file" id="aiNotesPdf" accept=".pdf,.jpg,.jpeg,.png,.webp" style="display:none"/>
         </div>
         <div class="ai-filename" id="aiNotesFileName"></div>
         <button class="ai-go-btn" id="aiNotesBtn" style="display:none">✨ Generate Notes</button>
@@ -714,8 +714,8 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
         <p style="font-size:12px;color:var(--text2);margin-bottom:16px">Upload your class material — AI generates a quiz just like NTA mock tests.</p>
         <div class="ai-upload-area" id="aiQuizUploadArea">
           <div class="ai-upload-icon">📄</div>
-          <div class="ai-upload-text">Tap to upload PDF</div>
-          <input type="file" id="aiQuizPdf" accept=".pdf" style="display:none"/>
+          <div class="ai-upload-text">Tap to upload PDF or image</div>
+          <input type="file" id="aiQuizPdf" accept=".pdf,.jpg,.jpeg,.png,.webp" style="display:none"/>
         </div>
         <div class="ai-filename" id="aiQuizFileName"></div>
         <button class="ai-go-btn" id="aiQuizBtn" style="display:none">✨ Generate Quiz</button>
@@ -2489,27 +2489,34 @@ document.getElementById('pcRestoreBtn').addEventListener('click', openSnapshotMo
 //  AI STUDY  —  PDF Notes + PDF Quiz
 // ═══════════════════════════════════════════════
 let _aiNotesPdf = null;
+let _aiNotesMediaType = 'application/pdf';
 let _aiQuizPdf  = null;
+let _aiQuizMediaType = 'application/pdf';
 let _quizQs     = [];
 let _quizAns    = [];
 
-// Read PDF file → base64
-function readPdfBase64(file) {
+// Read any file → base64 + mediaType
+function readFileBase64(file) {
   return new Promise((res, rej) => {
     const r = new FileReader();
-    r.onload  = () => res(r.result.split(',')[1]);
+    r.onload  = () => res({ base64: r.result.split(',')[1], mediaType: file.type || 'application/pdf' });
     r.onerror = () => rej(new Error('Could not read file'));
     r.readAsDataURL(file);
   });
 }
+// Keep old name for compat
+async function readPdfBase64(file) {
+  const result = await readFileBase64(file);
+  return result.base64;
+}
 
 // Call backend proxy → Claude API
-async function callClaude(base64, prompt, maxTokens = 2000) {
+async function callClaude(base64, prompt, maxTokens = 2000, mediaType = 'application/pdf') {
   const BACKEND = 'https://deepwork-ai-imt2.onrender.com/ai';
   const resp = await fetch(BACKEND, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ base64, prompt, maxTokens })
+    body: JSON.stringify({ base64, mediaType, prompt, maxTokens })
   });
   if (!resp.ok) throw new Error('Server error ' + resp.status);
   const d = await resp.json();
@@ -2526,7 +2533,9 @@ document.getElementById('aiNotesPdf').addEventListener('change', async e => {
   const file = e.target.files[0];
   if (!file) return;
   try {
-    _aiNotesPdf = await readPdfBase64(file);
+    const result = await readFileBase64(file);
+    _aiNotesPdf = result.base64;
+    _aiNotesMediaType = result.mediaType;
     document.getElementById('aiNotesFileName').textContent = '📄 ' + file.name;
     document.getElementById('aiNotesFileName').style.display = 'block';
     document.getElementById('aiNotesBtn').style.display = 'block';
@@ -2534,7 +2543,7 @@ document.getElementById('aiNotesPdf').addEventListener('change', async e => {
     document.getElementById('aiNotesSaveBtn').style.display = 'none';
     document.getElementById('aiNotesError').style.display = 'none';
   } catch(err) {
-    showToast('Could not read PDF');
+    showToast('Could not read file');
   }
   e.target.value = '';
 });
@@ -2549,24 +2558,30 @@ document.getElementById('aiNotesBtn').addEventListener('click', async () => {
   document.getElementById('aiNotesError').style.display = 'none';
   try {
     const notes = await callClaude(_aiNotesPdf,
-`You are a study assistant. Read this PDF and produce clear, structured study notes.
+`You are an expert study assistant and OCR engine. This document may have teacher marks on it — underlines, circles, arrows, highlights, boxes drawn around text. These marks are on top of the text, not part of it.
 
-Format exactly like this:
+Your job:
+1. Read through ALL marks and extract the actual underlying text perfectly and accurately
+2. Do not let any marks, lines, circles or highlights confuse the meaning of the words
+3. Understand the subject matter deeply and produce clean accurate study notes
+
+Produce structured study notes in this exact format:
 
 📌 TOPIC: [main subject]
 
 KEY POINTS:
-• [point]
-• [point]
-• [point]
+• [accurate point from the content]
+• [accurate point]
+• [accurate point]
 
 IMPORTANT TERMS:
-• [Term]: [short definition]
+• [Term]: [accurate definition]
 
 SUMMARY:
-[2–3 sentences summarising the whole document]
+[2–3 accurate sentences summarising the document]
 
-Be thorough but concise. Use simple, clear language a student can understand.`
+Be thorough and precise. Extract every word correctly even if it has marks on it.`
+      , 2000, _aiNotesMediaType
     );
     document.getElementById('aiNotesResult').textContent = notes;
     document.getElementById('aiNotesResult').style.display = 'block';
@@ -2610,13 +2625,15 @@ document.getElementById('aiQuizPdf').addEventListener('change', async e => {
   const file = e.target.files[0];
   if (!file) return;
   try {
-    _aiQuizPdf = await readPdfBase64(file);
+    const result = await readFileBase64(file);
+    _aiQuizPdf = result.base64;
+    _aiQuizMediaType = result.mediaType;
     document.getElementById('aiQuizFileName').textContent = '📄 ' + file.name;
     document.getElementById('aiQuizFileName').style.display = 'block';
     document.getElementById('aiQuizBtn').style.display = 'block';
     document.getElementById('ntaSubjectLabel').textContent = file.name.replace(/\.pdf$/i,'').slice(0,40);
     document.getElementById('aiQuizError').style.display = 'none';
-  } catch(err) { showToast('Could not read PDF'); }
+  } catch(err) { showToast('Could not read file'); }
   e.target.value = '';
 });
 
@@ -2628,21 +2645,29 @@ document.getElementById('aiQuizBtn').addEventListener('click', async () => {
   document.getElementById('aiQuizError').style.display = 'none';
   try {
     const raw = await callClaude(_aiQuizPdf,
-`You are a quiz generator. Read this PDF and create exactly 10 multiple-choice questions.
+`You are an expert quiz generator and OCR engine. This document may have teacher marks on it — underlines, circles, arrows, highlights, boxes drawn around words. These are drawn ON TOP of the text, not part of it.
 
-Reply ONLY with a JSON array. No explanation, no markdown, no extra text. Just the raw JSON:
+Your job:
+1. Read through ALL marks and extract the actual underlying text perfectly and accurately
+2. Do not let any marks, lines, circles or highlights confuse or alter the meaning of the words
+3. Understand the subject matter completely and create accurate questions from the real content
+
+Create exactly 10 multiple-choice questions that test genuine understanding of the material.
+
+Reply ONLY with a valid JSON array. No explanation, no markdown, no extra text. Just raw JSON:
 
 [
   {
-    "question": "Full question text?",
+    "question": "Accurate question based on the real content?",
     "options": ["Option A", "Option B", "Option C", "Option D"],
     "answer": 0,
-    "explanation": "Short explanation of the correct answer"
+    "explanation": "Clear explanation of why this is correct based on the content"
   }
 ]
 
-"answer" is the 0-based index of the correct option. Make questions genuinely test understanding. Create exactly 10 questions.`,
-      2000
+"answer" is the 0-based index (0, 1, 2, or 3) of the correct option.
+Make all 4 options plausible. Create exactly 10 questions. Return ONLY the JSON array.`,
+      2000, _aiQuizMediaType
     );
     const clean = raw.replace(/^```(?:json)?\n?/,'').replace(/\n?```$/,'').trim();
     _quizQs  = JSON.parse(clean);
