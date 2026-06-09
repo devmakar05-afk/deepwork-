@@ -2510,7 +2510,7 @@ async function readPdfBase64(file) {
   return result.base64;
 }
 
-// Call backend proxy → Claude API
+// Call backend proxy → OpenRouter API
 async function callClaude(base64, prompt, maxTokens = 2000, mediaType = 'application/pdf') {
   const BACKEND = 'https://deepworks.devmakar05.workers.dev';
   const resp = await fetch(BACKEND, {
@@ -2520,7 +2520,7 @@ async function callClaude(base64, prompt, maxTokens = 2000, mediaType = 'applica
   });
   if (!resp.ok) throw new Error('Server error ' + resp.status);
   const d = await resp.json();
-  if (d.error) throw new Error(d.error);
+  if (d.error) throw new Error(typeof d.error === 'object' ? JSON.stringify(d.error) : d.error);
   return d.text || '';
 }
 
@@ -2583,7 +2583,17 @@ SUMMARY:
 Be thorough and precise. Extract every word correctly even if it has marks on it.`
       , 2000, _aiNotesMediaType
     );
-    document.getElementById('aiNotesResult').textContent = notes;
+    function renderMd(t){
+      return t
+        .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+        .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+        .replace(/\*(.+?)\*/g,'<em>$1</em>')
+        .replace(/^#{1,3} (.+)$/gm,'<h3 style="margin:12px 0 4px;color:var(--accent)">$1</h3>')
+        .replace(/^[•\-] (.+)$/gm,'<li style="margin:3px 0 3px 16px">$1</li>')
+        .replace(/\n\n/g,'<br><br>')
+        .replace(/\n/g,'<br>');
+    }
+    document.getElementById('aiNotesResult').innerHTML = renderMd(notes);
     document.getElementById('aiNotesResult').style.display = 'block';
     document.getElementById('aiNotesSaveBtn').style.display = 'block';
   } catch(err) {
@@ -2602,7 +2612,7 @@ document.getElementById('aiNotesSaveBtn').addEventListener('click', () => {
   const n = {
     id: 'n_' + Date.now(),
     title: 'AI Notes — ' + new Date().toLocaleDateString('en-GB'),
-    content: text
+    body: text
   };
   notes.push(n);
   activeNoteId = n.id;
