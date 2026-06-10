@@ -1086,11 +1086,11 @@ function signOut() {
 function saveSession(profileId, name) {
   const val = JSON.stringify({ profileId, name });
   saveJ(SESSION_KEY, { profileId, name });
-  // also persist in cookie for Fluid/WebKit which may clear localStorage
+  // persist in cookie for Fluid/WebKit
   const exp = new Date(); exp.setFullYear(exp.getFullYear() + 2);
   document.cookie = `${SESSION_KEY}=${encodeURIComponent(val)};expires=${exp.toUTCString()};path=/;SameSite=Lax`;
-  // also save to Firebase as ultimate fallback
-  _fbSet('deepwork_sessions/' + profileId, { profileId, name, updated: Date.now() });
+  // save to Firebase as ultimate fallback
+  _fbSet('deepwork/dw_session_v1', { value: val, updated: Date.now() });
 }
 
 function loadSession() {
@@ -2962,7 +2962,7 @@ document.getElementById('aiModeQuiz').addEventListener('click', () => {
 //  BOOT
 // ═══════════════════════════════════════════════
 (async function boot() {
-  // Check local session first (fast)
+  // Step 1: check local session (localStorage + cookie)
   const session = loadSession();
   if (session && session.profileId) {
     const local = loadJ('dw_profiles_v1') || [];
@@ -2976,31 +2976,17 @@ document.getElementById('aiModeQuiz').addEventListener('click', () => {
     }
   }
 
-  // Local failed — check Firebase sessions directly
-  // This handles Fluid clearing localStorage/cookies on close
+  // Step 2: local failed — try Firebase session
   try {
-    // Get all profiles from Firebase
-    const cloudProfilesDoc = await _fbGet('deepwork/dw_profiles_v1');
-    if (cloudProfilesDoc && cloudProfilesDoc.value) {
-      const profiles = JSON.parse(cloudProfilesDoc.value);
-      if (profiles && profiles.length > 0) {
-        // Find the most recently used session from Firebase
-        let latestSession = null;
-        let latestTime = 0;
-        for (const p of profiles) {
-          try {
-            const s = await _fbGet('deepwork_sessions/' + p.id);
-            if (s && s.updated && s.updated > latestTime) {
-              latestTime = s.updated;
-              latestSession = { profile: p, session: s };
-            }
-          } catch(e) {}
-        }
-        if (latestSession) {
-          // Restore session locally
-          saveJ('dw_profiles_v1', profiles);
-          saveSession(latestSession.profile.id, latestSession.profile.name);
-          await launchApp(latestSession.profile);
+    const fbSession = await _fbGet('deepwork/dw_session_v1');
+    if (fbSession && fbSession.value) {
+      const s = JSON.parse(fbSession.value);
+      if (s && s.profileId) {
+        let profile = null;
+        try { profile = await _fbGet('deepwork_profiles/' + s.profileId); } catch(e) {}
+        if (profile) {
+          saveSession(profile.id, profile.name);
+          await launchApp(profile);
           return;
         }
       }
