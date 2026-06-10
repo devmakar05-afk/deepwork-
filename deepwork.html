@@ -1085,27 +1085,41 @@ function signOut() {
 
 function saveSession(profileId, name) {
   const val = JSON.stringify({ profileId, name });
-  saveJ(SESSION_KEY, { profileId, name });
-  // also persist in cookie for Fluid/WebKit which may clear localStorage
-  const exp = new Date(); exp.setFullYear(exp.getFullYear() + 2);
-  document.cookie = `${SESSION_KEY}=${encodeURIComponent(val)};expires=${exp.toUTCString()};path=/;SameSite=Lax`;
+  // save to multiple places for Fluid/WebKit persistence
+  try { localStorage.setItem(SESSION_KEY, val); } catch(e){}
+  try { localStorage.setItem('dw_active_user', val); } catch(e){}
+  try {
+    const exp = new Date(); exp.setFullYear(exp.getFullYear() + 2);
+    document.cookie = `${SESSION_KEY}=${encodeURIComponent(val)};expires=${exp.toUTCString()};path=/;SameSite=Lax`;
+  } catch(e){}
 }
 
 function loadSession() {
-  // try localStorage first
-  const ls = loadJ(SESSION_KEY);
-  if (ls && ls.profileId) return ls;
-  // fallback to cookie
-  const match = document.cookie.split(';').map(c => c.trim()).find(c => c.startsWith(SESSION_KEY + '='));
-  if (match) {
-    try { return JSON.parse(decodeURIComponent(match.split('=').slice(1).join('='))); } catch(e) {}
+  // try all storage locations
+  const sources = [
+    () => localStorage.getItem(SESSION_KEY),
+    () => localStorage.getItem('dw_active_user'),
+    () => {
+      const m = document.cookie.split(';').map(c=>c.trim()).find(c=>c.startsWith(SESSION_KEY+'='));
+      return m ? decodeURIComponent(m.split('=').slice(1).join('=')) : null;
+    }
+  ];
+  for (const src of sources) {
+    try {
+      const raw = src();
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed && parsed.profileId) return parsed;
+      }
+    } catch(e){}
   }
   return null;
 }
 
 function clearSession() {
-  localStorage.removeItem(SESSION_KEY);
-  document.cookie = `${SESSION_KEY}=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;`;
+  try { localStorage.removeItem(SESSION_KEY); } catch(e){}
+  try { localStorage.removeItem('dw_active_user'); } catch(e){}
+  try { document.cookie = `${SESSION_KEY}=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;`; } catch(e){}
 }
 document.getElementById('showNewProfileBtn').addEventListener('click', showNewProfileView);
 document.getElementById('loginSubmitBtn').addEventListener('click', handleLogin);
