@@ -820,39 +820,7 @@ async function loadJ_cloud(k) {
 // ═══════════════════════════════════════════════
 //  PROFILES
 // ═══════════════════════════════════════════════
-const SESSION_KEY     = 'dw_session_v1';
-const FB_SESSION_KEY  = 'deepwork_session/active'; // Firebase path for session
-
-function saveSession(profileId, name) {
-  const val = { profileId, name, ts: Date.now() };
-  // save locally
-  try { localStorage.setItem(SESSION_KEY, JSON.stringify(val)); } catch(e){}
-  try { localStorage.setItem('dw_active_user', JSON.stringify(val)); } catch(e){}
-  // save to Firebase — persists even when Fluid wipes localStorage
-  try { _fbSet(FB_SESSION_KEY, val); } catch(e){}
-}
-
-async function loadSession() {
-  // 1. try localStorage
-  for (const key of [SESSION_KEY, 'dw_active_user']) {
-    try {
-      const raw = localStorage.getItem(key);
-      if (raw) { const p = JSON.parse(raw); if (p && p.profileId) return p; }
-    } catch(e){}
-  }
-  // 2. fallback to Firebase (works even after Fluid wipes localStorage)
-  try {
-    const fb = await _fbGet(FB_SESSION_KEY);
-    if (fb && fb.profileId) return fb;
-  } catch(e){}
-  return null;
-}
-
-function clearSession() {
-  try { localStorage.removeItem(SESSION_KEY); } catch(e){}
-  try { localStorage.removeItem('dw_active_user'); } catch(e){}
-  try { _fbSet(FB_SESSION_KEY, null); } catch(e){}
-}
+const SESSION_KEY = 'dw_session_v1';
 
 function hashPin(pin) {
   let h = 0;
@@ -1115,6 +1083,41 @@ function signOut() {
   showLoginView();
 }
 
+function saveSession(profileId, name) {
+  const val = JSON.stringify({ profileId, name });
+  saveJ(SESSION_KEY, { profileId, name });
+  // also persist in cookie for Fluid/WebKit which may clear localStorage
+  const exp = new Date(); exp.setFullYear(exp.getFullYear() + 2);
+  document.cookie = `${SESSION_KEY}=${encodeURIComponent(val)};expires=${exp.toUTCString()};path=/;SameSite=Lax`;
+  // also save to Firebase as ultimate fallback
+  _fbSet('deepwork_sessions/' + profileId, { profileId, name, updated: Date.now() });
+}
+
+function loadSession() {
+  // try localStorage first
+  const ls = loadJ(SESSION_KEY);
+  if (ls && ls.profileId) return ls;
+  // fallback to cookie
+  const match = document.cookie.split(';').map(c => c.trim()).find(c => c.startsWith(SESSION_KEY + '='));
+  if (match) {
+    try { return JSON.parse(decodeURIComponent(match.split('=').slice(1).join('='))); } catch(e) {}
+  }
+  return null;
+}
+
+async function loadSessionWithCloud(profileId) {
+  // if we have a profileId hint, try Firebase directly
+  try {
+    const r = await _fbGet('deepwork_sessions/' + profileId);
+    if (r && r.profileId) return r;
+  } catch(e) {}
+  return null;
+}
+
+function clearSession() {
+  localStorage.removeItem(SESSION_KEY);
+  document.cookie = `${SESSION_KEY}=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;`;
+}
 document.getElementById('showNewProfileBtn').addEventListener('click', showNewProfileView);
 document.getElementById('loginSubmitBtn').addEventListener('click', handleLogin);
 document.getElementById('loginPinInput').addEventListener('keydown', e => { if (e.key === 'Enter') handleLogin(); });
@@ -2959,7 +2962,7 @@ document.getElementById('aiModeQuiz').addEventListener('click', () => {
 //  BOOT
 // ═══════════════════════════════════════════════
 (async function boot() {
-  const session = await loadSession();
+  const session = loadSession();
   if (session && session.profileId) {
     // Try auto-login from saved session
     const local = loadJ('dw_profiles_v1') || [];
@@ -2972,6 +2975,21 @@ document.getElementById('aiModeQuiz').addEventListener('click', () => {
       return;
     }
   }
+  // Last resort — check Firebase for any recent session
+  // by trying to find profiles from cloud
+  try {
+    const cloudProfiles = await _fbGet('deepwork/dw_profiles_v1');
+    if (cloudProfiles && cloudProfiles.value) {
+      const profiles = JSON.parse(cloudProfiles.value);
+      if (profiles && profiles.length === 1) {
+        // Only one profile — auto restore session
+        saveSession(profiles[0].id, profiles[0].name);
+        saveJ('dw_profiles_v1', profiles);
+        await launchApp(profiles[0]);
+        return;
+      }
+    }
+  } catch(e) {}
   showLoginView();
 })();
 </script>
