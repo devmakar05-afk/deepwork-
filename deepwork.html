@@ -863,23 +863,22 @@ function profileDataKeys(id) {
 async function loadProfileData(id) {
   const k = profileDataKeys(id);
   // load local instantly
-  data       = loadJ(k.d)  || {};
   habits     = loadJ(k.h)  || [];
   notes      = loadJ(k.n)  || [];
   manualData = loadJ(k.d + '_manual') || {};
+  recalcData(); // build data from habits + manualData
   // then sync from Firebase
-  const [fd, fh, fn, fm] = await Promise.all([
-    loadJ_cloud(k.d), loadJ_cloud(k.h), loadJ_cloud(k.n), loadJ_cloud(k.d + '_manual')
+  const [fh, fn, fm] = await Promise.all([
+    loadJ_cloud(k.h), loadJ_cloud(k.n), loadJ_cloud(k.d + '_manual')
   ]);
   let changed = false;
-  if (fd && JSON.stringify(fd) !== JSON.stringify(data))         { data = fd;         changed = true; }
-  if (fh && JSON.stringify(fh) !== JSON.stringify(habits))       { habits = fh;       changed = true; }
-  if (fn && JSON.stringify(fn) !== JSON.stringify(notes))        { notes = fn;        changed = true; }
-  if (fm && JSON.stringify(fm) !== JSON.stringify(manualData))   { manualData = fm;   changed = true; }
-  if (changed) { renderStats(); renderGrid(); renderHabits(); renderNotes(); }
+  if (fh && JSON.stringify(fh) !== JSON.stringify(habits))       { habits     = fh; changed = true; }
+  if (fn && JSON.stringify(fn) !== JSON.stringify(notes))        { notes      = fn; changed = true; }
+  if (fm && JSON.stringify(fm) !== JSON.stringify(manualData))   { manualData = fm; changed = true; }
+  if (changed) { recalcData(); renderStats(); renderGrid(); renderHabits(); renderNotes(); }
 }
 
-function saveData()   { saveJ_cloud(profileDataKeys(activeProfile.id).d, data); }
+function saveData()   { /* data is always recalculated from habits+manualData — not stored separately */ }
 function saveHabits() { saveJ_cloud(profileDataKeys(activeProfile.id).h, habits); }
 function saveNotes()  { saveJ_cloud(profileDataKeys(activeProfile.id).n, notes); }
 
@@ -1035,10 +1034,28 @@ async function purgeJune1to8_2026() {
   }
 }
 
+async function maybeResetProgressForAccount() {
+  if (!activeProfile) return;
+  const nameLower = activeProfile.name.toLowerCase().trim();
+  if (nameLower !== 'd4v' && nameLower !== 'harman') return;
+  const resetKey = 'dw_progress_reset_v1_' + activeProfile.id;
+  if (loadJ(resetKey)) return; // already done — never run again
+  // wipe habit completions
+  habits.forEach(h => { h.completions = {}; });
+  // wipe manual logged time
+  manualData = {};
+  saveHabits();
+  saveManualData();
+  recalcData();
+  saveJ(resetKey, true); // mark as done permanently
+  console.log('Progress reset done for', activeProfile.name);
+}
+
 async function launchApp(profile) {
   activeProfile = profile;
   await loadProfileData(profile.id);
   await purgeJune1to8_2026();
+  await maybeResetProgressForAccount();
   yearOffset = 0; habitMonthOffset = 0; activeNoteId = null;
   loadPC(); maybeAutoSnapshot(); renderPC();
   document.getElementById('loginScreen').style.display = 'none';
@@ -1346,15 +1363,12 @@ function renderHabits() {
       if(!h.completions)h.completions={};
       const wasDone=!!h.completions[date];
       if(!wasDone){
-        // Mark complete + permanently lock minutes into manualData so they never disappear
         h.completions[date]=true;
-        manualData[date] = (manualData[date]||0) + h.mins;
-        saveHabits(); saveManualData(); recalcData();
+        saveHabits(); recalcData();
         renderStats(); renderGrid();
         showToast(`✓ ${h.name} done! +${ft(h.mins)} logged`);
         spawnConfetti(box);
       } else {
-        // Uncheck: remove from completions but keep minutes in manualData — progress stays
         h.completions[date]=false;
         saveHabits(); recalcData();
         renderStats(); renderGrid();
@@ -1389,15 +1403,8 @@ function renderHabits() {
       const h=habits.find(x=>x.id===hid); if(!h)return;
       showConfirm('Delete habit?',`"${h.name}" and all its completions will be removed. You can restore it from Backups.`,()=>{
         pushTrash('habit', h.name, h);
-        // REMOVE this habit's completed minutes from manualData so progress grid updates
-        Object.entries(h.completions||{}).forEach(([date, done])=>{
-          if(done){
-            manualData[date]=(manualData[date]||0)-h.mins;
-            if(manualData[date]<=0) delete manualData[date];
-          }
-        });
         habits=habits.filter(x=>x.id!==hid);
-        saveManualData(); saveHabits(); recalcData(); renderHabits(); renderStats(); renderGrid();
+        saveHabits(); recalcData(); renderHabits(); renderStats(); renderGrid();
       });
     });
   });
