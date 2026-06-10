@@ -2962,9 +2962,9 @@ document.getElementById('aiModeQuiz').addEventListener('click', () => {
 //  BOOT
 // ═══════════════════════════════════════════════
 (async function boot() {
+  // Check local session first (fast)
   const session = loadSession();
   if (session && session.profileId) {
-    // Try auto-login from saved session
     const local = loadJ('dw_profiles_v1') || [];
     let profile = local.find(p => p.id === session.profileId);
     if (!profile) {
@@ -2975,21 +2975,38 @@ document.getElementById('aiModeQuiz').addEventListener('click', () => {
       return;
     }
   }
-  // Last resort — check Firebase for any recent session
-  // by trying to find profiles from cloud
+
+  // Local failed — check Firebase sessions directly
+  // This handles Fluid clearing localStorage/cookies on close
   try {
-    const cloudProfiles = await _fbGet('deepwork/dw_profiles_v1');
-    if (cloudProfiles && cloudProfiles.value) {
-      const profiles = JSON.parse(cloudProfiles.value);
-      if (profiles && profiles.length === 1) {
-        // Only one profile — auto restore session
-        saveSession(profiles[0].id, profiles[0].name);
-        saveJ('dw_profiles_v1', profiles);
-        await launchApp(profiles[0]);
-        return;
+    // Get all profiles from Firebase
+    const cloudProfilesDoc = await _fbGet('deepwork/dw_profiles_v1');
+    if (cloudProfilesDoc && cloudProfilesDoc.value) {
+      const profiles = JSON.parse(cloudProfilesDoc.value);
+      if (profiles && profiles.length > 0) {
+        // Find the most recently used session from Firebase
+        let latestSession = null;
+        let latestTime = 0;
+        for (const p of profiles) {
+          try {
+            const s = await _fbGet('deepwork_sessions/' + p.id);
+            if (s && s.updated && s.updated > latestTime) {
+              latestTime = s.updated;
+              latestSession = { profile: p, session: s };
+            }
+          } catch(e) {}
+        }
+        if (latestSession) {
+          // Restore session locally
+          saveJ('dw_profiles_v1', profiles);
+          saveSession(latestSession.profile.id, latestSession.profile.name);
+          await launchApp(latestSession.profile);
+          return;
+        }
       }
     }
   } catch(e) {}
+
   showLoginView();
 })();
 </script>
