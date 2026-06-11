@@ -1010,6 +1010,7 @@ async function createProfile() {
     if (existing.length) { err.textContent = 'That name is already taken. Choose another.'; return; }
   const newP = { id: 'p_' + Date.now(), name, pinHash: hashPin(pin) };
   await saveProfile(newP);
+  saveSession(newP.id, newP.name);
   await launchApp(newP);
 }
 
@@ -1086,11 +1087,9 @@ function signOut() {
 function saveSession(profileId, name) {
   const val = JSON.stringify({ profileId, name });
   saveJ(SESSION_KEY, { profileId, name });
-  // persist in cookie for Fluid/WebKit
+  // also persist in cookie for Fluid/WebKit which may clear localStorage
   const exp = new Date(); exp.setFullYear(exp.getFullYear() + 2);
   document.cookie = `${SESSION_KEY}=${encodeURIComponent(val)};expires=${exp.toUTCString()};path=/;SameSite=Lax`;
-  // save to Firebase as ultimate fallback
-  _fbSet('deepwork/dw_session_v1', { value: val, updated: Date.now() });
 }
 
 function loadSession() {
@@ -1102,15 +1101,6 @@ function loadSession() {
   if (match) {
     try { return JSON.parse(decodeURIComponent(match.split('=').slice(1).join('='))); } catch(e) {}
   }
-  return null;
-}
-
-async function loadSessionWithCloud(profileId) {
-  // if we have a profileId hint, try Firebase directly
-  try {
-    const r = await _fbGet('deepwork_sessions/' + profileId);
-    if (r && r.profileId) return r;
-  } catch(e) {}
   return null;
 }
 
@@ -2962,9 +2952,9 @@ document.getElementById('aiModeQuiz').addEventListener('click', () => {
 //  BOOT
 // ═══════════════════════════════════════════════
 (async function boot() {
-  // Step 1: check local session (localStorage + cookie)
   const session = loadSession();
   if (session && session.profileId) {
+    // Try auto-login from saved session
     const local = loadJ('dw_profiles_v1') || [];
     let profile = local.find(p => p.id === session.profileId);
     if (!profile) {
@@ -2975,24 +2965,6 @@ document.getElementById('aiModeQuiz').addEventListener('click', () => {
       return;
     }
   }
-
-  // Step 2: local failed — try Firebase session
-  try {
-    const fbSession = await _fbGet('deepwork/dw_session_v1');
-    if (fbSession && fbSession.value) {
-      const s = JSON.parse(fbSession.value);
-      if (s && s.profileId) {
-        let profile = null;
-        try { profile = await _fbGet('deepwork_profiles/' + s.profileId); } catch(e) {}
-        if (profile) {
-          saveSession(profile.id, profile.name);
-          await launchApp(profile);
-          return;
-        }
-      }
-    }
-  } catch(e) {}
-
   showLoginView();
 })();
 </script>
