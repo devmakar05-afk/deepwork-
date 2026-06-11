@@ -2974,19 +2974,44 @@ document.getElementById('aiModeQuiz').addEventListener('click', () => {
 //  BOOT
 // ═══════════════════════════════════════════════
 (async function boot() {
-  const session = loadSession();
-  if (session && session.profileId) {
-    // Try auto-login from saved session
-    const local = loadJ('dw_profiles_v1') || [];
-    let profile = local.find(p => p.id === session.profileId);
-    if (!profile) {
-      try { profile = await _fbGet('deepwork_profiles/' + session.profileId); } catch(e) {}
-    }
-    if (profile) {
-      await launchApp(profile);
-      return;
-    }
+  // Always show loading first — NEVER flash login screen if session exists
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('loginView').style.display = 'none';
+
+  // Show a simple loading state
+  const loadDiv = document.createElement('div');
+  loadDiv.id = 'bootLoader';
+  loadDiv.style.cssText = 'position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:9999;flex-direction:column;gap:16px';
+  loadDiv.innerHTML = '<div style="width:24px;height:24px;border:2.5px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite"></div><div style="font-size:13px;color:var(--text2);font-weight:500;letter-spacing:0.04em">Loading...</div>';
+  document.body.appendChild(loadDiv);
+
+  function removeBoot() {
+    const el = document.getElementById('bootLoader');
+    if (el) el.remove();
   }
+
+  try {
+    const session = loadSession();
+    if (session && session.profileId) {
+      // Try local first (instant)
+      const local = loadJ('dw_profiles_v1') || [];
+      let profile = local.find(p => p.id === session.profileId);
+      if (!profile) {
+        // Try Firebase
+        try { profile = await _fbGet('deepwork_profiles/' + session.profileId); } catch(e) {}
+      }
+      if (profile) {
+        removeBoot();
+        await launchApp(profile);
+        return;
+      }
+    }
+  } catch(e) {
+    console.warn('Boot error:', e);
+  }
+
+  // No session or profile not found — show login
+  removeBoot();
   showLoginView();
 })();
 </script>
