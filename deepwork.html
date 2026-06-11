@@ -975,45 +975,75 @@ const DAYS_FULL    = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
 //  LOGIN LOGIC  — name + PIN form
 // ═══════════════════════════════════════════════
 function showLoginView() {
+  document.getElementById('loginScreen').style.display = 'flex';
   document.getElementById('loginView').style.display = '';
   document.getElementById('newProfileView').style.display = 'none';
   document.getElementById('loginError').textContent = '';
   document.getElementById('loginNameInput').value = '';
   document.getElementById('loginPinInput').value = '';
 
-  // If there's a saved session — prefill the name and focus PIN
-  const session = loadSession();
-  if (session && session.name) {
-    document.getElementById('loginNameInput').value = session.name;
-    setTimeout(() => document.getElementById('loginPinInput').focus(), 50);
+  // Remove old saved profile row if exists
+  const old = document.getElementById('savedProfileRow');
+  if (old) old.remove();
+
+  // Use active session first, then fall back to last profile on THIS device
+  let session = loadSession();
+  if (!session || !session.profileId) {
+    try {
+      const last = localStorage.getItem('dw_last_profile');
+      if (last) session = JSON.parse(last);
+    } catch(e) {}
+  }
+  // dw_last_profile is localStorage — device specific
+  // So Device A shows Profile A, Device B shows Profile B — never cross
+
+  if (session && session.profileId && session.name) {
+    const row = document.createElement('div');
+    row.id = 'savedProfileRow';
+    row.style.cssText = 'margin-bottom:16px';
+    row.innerHTML = `
+      <button id="savedProfileBtn" style="
+        display:flex;align-items:center;gap:12px;
+        padding:13px 16px;width:100%;
+        border-radius:13px;
+        border:1.5px solid var(--border);
+        background:var(--surface);
+        cursor:pointer;
+        font-family:'Inter',sans-serif;
+        text-align:left;
+        transition:all .18s;
+      ">
+        <div style="width:36px;height:36px;border-radius:10px;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;flex-shrink:0">${session.name.charAt(0).toUpperCase()}</div>
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:700;color:var(--text)">${session.name}</div>
+          <div style="font-size:11px;color:var(--text2);margin-top:2px">Tap to open your tracker</div>
+        </div>
+        <div style="font-size:18px;color:var(--text3)">›</div>
+      </button>`;
+    // Insert after .login-sub
+    const loginSub = document.querySelector('.login-sub');
+    if (loginSub) loginSub.after(row);
+
+    // Click → go straight in NO PIN
+    document.getElementById('savedProfileBtn').addEventListener('click', async () => {
+      const profiles = loadJ('dw_profiles_v1') || [];
+      let profile = profiles.find(p => p.id === session.profileId);
+      if (!profile) {
+        try { profile = await _fbGet('deepwork_profiles/' + session.profileId); } catch(e) {}
+      }
+      if (profile) {
+        document.getElementById('loginScreen').style.display = 'none';
+        const sp = document.createElement('div');
+        sp.style.cssText = 'position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:9999';
+        sp.innerHTML = '<div style="width:24px;height:24px;border:2.5px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite"></div>';
+        document.body.appendChild(sp);
+        await launchApp(profile);
+        sp.remove();
+      }
+    });
   } else {
     setTimeout(() => document.getElementById('loginNameInput').focus(), 50);
   }
-
-  // Show saved profile button if session exists
-  const savedProfileRow = document.getElementById('savedProfileRow');
-  if (savedProfileRow) savedProfileRow.remove();
-  if (session && session.name) {
-    const row = document.createElement('div');
-    row.id = 'savedProfileRow';
-    row.style.cssText = 'margin-bottom:14px';
-    row.innerHTML = `
-      <div style="font-size:11px;color:var(--text2);font-weight:600;margin-bottom:8px;letter-spacing:0.04em">YOUR PROFILE</div>
-      <button onclick="prefillProfile('${session.name}')" style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-radius:13px;border:1.5px solid var(--border);background:var(--bg);cursor:pointer;font-family:'Inter',sans-serif;font-size:13px;font-weight:600;color:var(--text);transition:all .18s;width:100%;text-align:left" onmouseover="this.style.borderColor='var(--accent)';this.style.background='var(--accent-dim)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--bg)'">
-        <div style="width:34px;height:34px;border-radius:10px;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;flex-shrink:0">${session.name.charAt(0).toUpperCase()}</div>
-        <div>
-          <div style="font-size:13px;font-weight:700">${session.name}</div>
-          <div style="font-size:11px;color:var(--text2);margin-top:1px">Tap to continue</div>
-        </div>
-      </button>`;
-    const loginSub = document.querySelector('.login-sub');
-    if (loginSub) loginSub.after(row);
-  }
-}
-
-function prefillProfile(name) {
-  document.getElementById('loginNameInput').value = name;
-  setTimeout(() => document.getElementById('loginPinInput').focus(), 50);
 }
 
 function showNewProfileView() {
@@ -1113,6 +1143,22 @@ async function launchApp(profile) {
   await maybeResetProgressForAccount();
   yearOffset = 0; habitMonthOffset = 0; activeNoteId = null;
   loadPC(); maybeAutoSnapshot(); renderPC();
+  // Async: check if Firebase has newer pcData and re-apply if so
+  (async () => {
+    try {
+      const remote = await _fbGet('deepwork/' + PC_KEY());
+      if (remote && remote.value) {
+        const remoteTs = remote.updated || 0;
+        const localTs  = loadJ(PC_KEY() + '_ts') || 0;
+        if (remoteTs > localTs) {
+          const parsed = JSON.parse(remote.value);
+          saveJ(PC_KEY(), parsed);
+          saveJ(PC_KEY() + '_ts', remoteTs);
+          loadPC(); renderPC();
+        }
+      }
+    } catch(e) {}
+  })();
   document.getElementById('loginScreen').style.display = 'none';
   document.getElementById('appScreen').style.display = 'block';
   document.getElementById('userPillAvatar').textContent = profile.name[0].toUpperCase();
@@ -1130,34 +1176,46 @@ async function launchApp(profile) {
 
 function signOut() {
   saveCurrentNote();
+  // Save THIS device's last logged-in profile BEFORE clearing session
+  // This way the profile box shows on THIS device only
+  if (activeProfile) {
+    try { localStorage.setItem('dw_last_profile', JSON.stringify({ profileId: activeProfile.id, name: activeProfile.name })); } catch(e) {}
+  }
+  // Clear session so auto-login doesn't happen — but profile box still shows
   clearSession();
   activeProfile = null; data={}; habits=[]; notes=[]; manualData={};
   document.getElementById('appScreen').style.display = 'none';
-  document.getElementById('loginScreen').style.display = 'none';
-  showProfilePicker();
+  document.getElementById('profilePicker').style.display = 'none';
+  document.getElementById('loginScreen').style.display = 'flex';
+  showLoginView();
 }
 
 async function showProfilePicker() {
-  let profiles = loadJ('dw_profiles_v1') || [];
-  try {
-    const fb = await _fbQuery('deepwork_profiles', null, null);
-    if (fb && fb.length > 0) {
-      fb.forEach(p => { if (!profiles.find(x => x.id === p.id)) profiles.push(p); });
-      saveJ('dw_profiles_v1', profiles);
-    }
-  } catch(e) {}
+  // Only show the profile from the current session — not all profiles
+  const session = loadSession();
+  const allProfiles = loadJ('dw_profiles_v1') || [];
+  // Filter: only show profile that matches current session
+  const profiles = session && session.profileId
+    ? allProfiles.filter(p => p.id === session.profileId)
+    : allProfiles;
 
   const picker = document.getElementById('profilePicker');
   const container = document.getElementById('pickerProfiles');
   container.innerHTML = '';
 
+  // Hide login screen, show picker
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('appScreen').style.display = 'none';
+
   if (profiles.length === 0) {
+    // No matching profile — show login
     picker.style.display = 'none';
     document.getElementById('loginScreen').style.display = 'flex';
-    showNewProfileView();
+    showLoginView();
     return;
   }
 
+  // Build profile cards — click = go straight in, NO PIN
   profiles.forEach(p => {
     const card = document.createElement('div');
     card.className = 'picker-profile';
@@ -1166,19 +1224,19 @@ async function showProfilePicker() {
       <div class="picker-name">${p.name}</div>`;
     card.addEventListener('click', async () => {
       picker.style.display = 'none';
-      const loadDiv = document.createElement('div');
-      loadDiv.id = 'bootLoader2';
-      loadDiv.style.cssText = 'position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:9999';
-      loadDiv.innerHTML = '<div style="width:24px;height:24px;border:2.5px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite"></div>';
-      document.body.appendChild(loadDiv);
+      // Show spinner while loading
+      const sp = document.createElement('div');
+      sp.style.cssText = 'position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:9999';
+      sp.innerHTML = '<div style="width:24px;height:24px;border:2.5px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite"></div>';
+      document.body.appendChild(sp);
       saveSession(p.id, p.name);
       await launchApp(p);
-      const ld = document.getElementById('bootLoader2');
-      if (ld) ld.remove();
+      sp.remove();
     });
     container.appendChild(card);
   });
 
+  // Add Profile button
   const addCard = document.createElement('div');
   addCard.className = 'picker-add';
   addCard.innerHTML = `<div class="picker-add-icon">+</div><div class="picker-add-name">Add Profile</div>`;
@@ -1189,8 +1247,8 @@ async function showProfilePicker() {
   });
   container.appendChild(addCard);
 
+  // Show picker
   picker.style.display = 'flex';
-  document.getElementById('loginScreen').style.display = 'none';
 }
 
 function saveSession(profileId, name) {
@@ -1558,6 +1616,7 @@ function renderHabits() {
       const h=habits.find(x=>x.id===hid); if(!h)return;
       showConfirm('Delete habit?',`"${h.name}" and all its completions will be removed. You can restore it from Backups.`,()=>{
         pushTrash('habit', h.name, h);
+        // Delete habit — progress disappears from grid
         habits=habits.filter(x=>x.id!==hid);
         saveHabits(); recalcData(); renderHabits(); renderStats(); renderGrid();
       });
@@ -2025,6 +2084,111 @@ const PC_PERMANENT_COLS = ['DPP','Class Questions','PYQ','Test','Module'];
 const PC_PERMANENT_SUBJECTS = ['Physics','Chemistry','Biology'];
 let pcData = { cols: [...PC_PERMANENT_COLS], subjects: [] };
 
+// Default syllabus topics for permanent subjects (seeded if subject has no topics yet)
+const PC_DEFAULT_TOPICS = {
+  'Physics': [
+    // Class 11
+    { name: 'Basic Mathematics', section: 'Class 11' },
+    { name: 'Vectors', section: 'Class 11' },
+    { name: 'Units and Measurements', section: 'Class 11' },
+    { name: 'Motion in a Straight Line', section: 'Class 11' },
+    { name: 'Motion in a Plane', section: 'Class 11' },
+    { name: 'Laws of Motion', section: 'Class 11' },
+    { name: 'Work, Energy and Power', section: 'Class 11' },
+    { name: 'Centre of Mass and System of Particles', section: 'Class 11' },
+    { name: 'Rotational Motion', section: 'Class 11' },
+    { name: 'Gravitation', section: 'Class 11' },
+    { name: 'Mechanical Properties of Solids', section: 'Class 11' },
+    { name: 'Mechanical Properties of Fluids', section: 'Class 11' },
+    { name: 'Thermal Properties of Matter', section: 'Class 11' },
+    { name: 'KTG & Thermodynamics', section: 'Class 11' },
+    { name: 'Oscillations', section: 'Class 11' },
+    { name: 'Waves', section: 'Class 11' },
+    // Class 12
+    { name: 'Electric Charges and Fields', section: 'Class 12' },
+    { name: 'Electrostatic Potential and Capacitance', section: 'Class 12' },
+    { name: 'Current Electricity', section: 'Class 12' },
+    { name: 'Moving Charges and Magnetism', section: 'Class 12' },
+    { name: 'Magnetism and Matter', section: 'Class 12' },
+    { name: 'Electromagnetic Induction', section: 'Class 12' },
+    { name: 'Alternating Current', section: 'Class 12' },
+    { name: 'Ray Optics and Optical Instruments', section: 'Class 12' },
+    { name: 'Wave Optics', section: 'Class 12' },
+    { name: 'Dual Nature of Radiation and Matter', section: 'Class 12' },
+    { name: 'Atoms', section: 'Class 12' },
+    { name: 'Nuclei', section: 'Class 12' },
+    { name: 'Semiconductors', section: 'Class 12' }
+  ],
+  'Chemistry': [
+    // Physical Chemistry (first)
+    { name: 'Some Basic Concepts of Chemistry', section: 'Physical' },
+    { name: 'Structure of Atom', section: 'Physical' },
+    { name: 'Thermodynamics', section: 'Physical' },
+    { name: 'Redox Reactions', section: 'Physical' },
+    { name: 'Chemical Equilibrium', section: 'Physical' },
+    { name: 'Ionic Equilibrium', section: 'Physical' },
+    { name: 'Solutions', section: 'Physical' },
+    { name: 'Electrochemistry', section: 'Physical' },
+    { name: 'Chemical Kinetics', section: 'Physical' },
+    { name: 'Surface Chemistry', section: 'Physical' },
+    // Inorganic Chemistry (second)
+    { name: 'Classification of Elements and Periodicity in Properties', section: 'Inorganic' },
+    { name: 'Chemical Bonding and Molecular Structure', section: 'Inorganic' },
+    { name: 'Coordination Compounds', section: 'Inorganic' },
+    { name: 'The d- and f-Block Elements', section: 'Inorganic' },
+    { name: 'The p-Block Elements', section: 'Inorganic' },
+    { name: 'Salt Analysis', section: 'Inorganic' },
+    // Organic Chemistry (third)
+    { name: 'IUPAC Nomenclature', section: 'Organic' },
+    { name: 'Isomerism', section: 'Organic' },
+    { name: 'General Organic Chemistry (GOC)', section: 'Organic' },
+    { name: 'Hydrocarbons', section: 'Organic' },
+    { name: 'Optical Isomerism', section: 'Organic' },
+    { name: 'Haloalkanes and Haloarenes', section: 'Organic' },
+    { name: 'Alcohols, Phenols and Ethers', section: 'Organic' },
+    { name: 'Aldehydes, Ketones and Carboxylic Acids', section: 'Organic' },
+    { name: 'Amines', section: 'Organic' },
+    { name: 'Biomolecules', section: 'Organic' },
+    { name: 'Purification and Characterisation of Organic Compounds', section: 'Organic' }
+  ],
+  'Biology': [
+    // Botany — marked with section so renderPC can show sub-headers
+    { name: 'Cell: The Unit of Life', section: 'Botany' },
+    { name: 'Cell Cycle and Cell Division', section: 'Botany' },
+    { name: 'The Living World', section: 'Botany' },
+    { name: 'Biological Classification', section: 'Botany' },
+    { name: 'Plant Kingdom', section: 'Botany' },
+    { name: 'Morphology of Flowering Plants', section: 'Botany' },
+    { name: 'Anatomy of Flowering Plants', section: 'Botany' },
+    { name: 'Photosynthesis in Higher Plants', section: 'Botany' },
+    { name: 'Respiration in Plants', section: 'Botany' },
+    { name: 'Plant Growth and Development', section: 'Botany' },
+    { name: 'Sexual Reproduction in Flowering Plants', section: 'Botany' },
+    { name: 'Principles of Inheritance and Variation', section: 'Botany' },
+    { name: 'Molecular Basis of Inheritance', section: 'Botany' },
+    { name: 'Microbes in Human Welfare', section: 'Botany' },
+    { name: 'Organisms and Populations', section: 'Botany' },
+    { name: 'Ecosystem', section: 'Botany' },
+    { name: 'Biodiversity and Conservation', section: 'Botany' },
+    // Zoology
+    { name: 'Structural Organisation in Animals', section: 'Zoology' },
+    { name: 'Breathing and Exchange of Gases', section: 'Zoology' },
+    { name: 'Body Fluids and Circulation', section: 'Zoology' },
+    { name: 'Excretory Products and Their Elimination', section: 'Zoology' },
+    { name: 'Locomotion and Movement', section: 'Zoology' },
+    { name: 'Neural Control and Coordination', section: 'Zoology' },
+    { name: 'Chemical Coordination and Integration', section: 'Zoology' },
+    { name: 'Animal Kingdom', section: 'Zoology' },
+    { name: 'Biomolecules', section: 'Zoology' },
+    { name: 'Human Reproduction', section: 'Zoology' },
+    { name: 'Reproductive Health', section: 'Zoology' },
+    { name: 'Human Health and Disease', section: 'Zoology' },
+    { name: 'Biotechnology: Principles and Processes', section: 'Zoology' },
+    { name: 'Biotechnology and Its Applications', section: 'Zoology' },
+    { name: 'Evolution', section: 'Zoology' }
+  ]
+};
+
 /* ── load / save PC ── */
 // Map old/stale column names → new permanent names
 const PC_COL_REMAP = {
@@ -2069,6 +2233,15 @@ function loadPC() {
 
   } else {
     pcData = { cols: [...PC_PERMANENT_COLS], subjects: [] };
+    // seed default topics for brand-new users
+    PC_PERMANENT_SUBJECTS.forEach(name => {
+      const topics = (PC_DEFAULT_TOPICS[name] || []).map(t =>
+        typeof t === 'string'
+          ? { name: t, checks: {}, permanent: true }
+          : { name: t.name, section: t.section, checks: {}, permanent: true }
+      );
+      pcData.subjects.push({ name, topics, permanent: true });
+    });
   }
 
   // ── Ensure permanent subjects always exist ──
@@ -2084,10 +2257,50 @@ function loadPC() {
     }
   });
 
+  // ── Seed default syllabus topics if a permanent subject has none ──
+  PC_PERMANENT_SUBJECTS.forEach(name => {
+    const subj = pcData.subjects.find(s => s.name === name);
+    if (subj && subj.topics.length === 0 && PC_DEFAULT_TOPICS[name]) {
+      subj.topics = PC_DEFAULT_TOPICS[name].map(t =>
+        typeof t === 'string'
+          ? { name: t, checks: {}, permanent: true }
+          : { name: t.name, section: t.section, checks: {}, permanent: true }
+      );
+    }
+  });
+
+  // ── Migrate: patch section field onto existing topics that are missing it ──
+  // Scoped per-subject so duplicate names (e.g. Biomolecules in Organic vs Zoology) don't collide
+  ['Chemistry','Biology','Physics'].forEach(subjName => {
+    const subj = pcData.subjects.find(s => s.name === subjName);
+    if (!subj) return;
+    const defaults = PC_DEFAULT_TOPICS[subjName] || [];
+    // Build a subject-scoped name→section map from default order
+    const subjSectionMap = {};
+    defaults.forEach(t => { if (typeof t === 'object' && t.section) subjSectionMap[t.name] = t.section; });
+    // Patch section + permanent on existing topics using subject-scoped map
+    subj.topics.forEach(t => {
+      if (!t.section && subjSectionMap[t.name]) t.section = subjSectionMap[t.name];
+      if (t.permanent === undefined && subjSectionMap[t.name]) t.permanent = true;
+    });
+    // Reorder to match default order (preserve any user-added topics at the end)
+    const defaultNames = defaults.map(t => typeof t === 'string' ? t : t.name);
+    const ordered = defaultNames.map(n => subj.topics.find(t => t.name === n)).filter(Boolean);
+    const extras  = subj.topics.filter(t => !defaultNames.includes(t.name));
+    subj.topics   = [...ordered, ...extras];
+  });
+
   // ── Re-order: permanent subjects first ──
   const permSubjs  = PC_PERMANENT_SUBJECTS.map(n => pcData.subjects.find(s => s.name === n)).filter(Boolean);
   const extraSubjs = pcData.subjects.filter(s => !PC_PERMANENT_SUBJECTS.includes(s.name));
   pcData.subjects  = [...permSubjs, ...extraSubjs];
+
+  // ── Persist any migration changes immediately ──
+  saveJ(PC_KEY(), pcData);
+  // also push to Firebase in background (non-blocking)
+  const _pcTs = Date.now();
+  saveJ(PC_KEY() + '_ts', _pcTs);
+  _fbSet('deepwork/' + PC_KEY(), { value: JSON.stringify(pcData), updated: _pcTs });
 }
 function savePC() { saveJ_cloud(PC_KEY(), pcData); }
 
@@ -2334,13 +2547,37 @@ function renderPC() {
       if (!subj.topics.length) {
         html += `<tr><td colspan="${totalCols + 1}" style="padding:8px 20px 4px;font-size:12px;color:var(--text3);background:var(--surface)">No chapters yet — add one below.</td></tr>`;
       } else {
+        let lastSection = null;
         subj.topics.forEach((topic, ti) => {
           const rowTicked = pcData.cols.filter((c, ci) => topic.checks && topic.checks[ci]).length;
           const rowPct    = totalCols ? Math.round((rowTicked / totalCols) * 100) : 0;
 
+          // Section divider row with shade-fill progress
+          if (topic.section && topic.section !== lastSection) {
+            lastSection = topic.section;
+            const sectionColors = {'Botany':'#4a7c59','Zoology':'#4a5fa0','Inorganic':'#7a6a3a','Organic':'#6a3a6a','Physical':'#3a5a7a','Class 11':'#5a6a3a','Class 12':'#3a6a6a'};
+            const sectionFills  = {'Botany':'rgba(74,124,89,0.55)','Zoology':'rgba(74,95,160,0.55)','Inorganic':'rgba(122,106,58,0.55)','Organic':'rgba(106,58,106,0.55)','Physical':'rgba(58,90,122,0.55)','Class 11':'rgba(90,106,58,0.55)','Class 12':'rgba(58,106,106,0.55)'};
+            const sColor = sectionColors[topic.section] || 'var(--accent)';
+            const sFill  = sectionFills[topic.section]  || 'rgba(122,148,122,0.55)';
+            // Compute section completion %
+            const sectionTopics = subj.topics.filter(t => t.section === topic.section);
+            const sTicked = sectionTopics.reduce((sum, t) => sum + pcData.cols.filter((c,ci) => t.checks && t.checks[ci]).length, 0);
+            const sTotal  = sectionTopics.length * totalCols;
+            const sPct    = sTotal ? Math.round((sTicked / sTotal) * 100) : 0;
+            html += `<tr><td colspan="${totalCols + 1}" style="padding:0;border-bottom:1px solid var(--border)">
+              <div style="position:relative;overflow:hidden;padding:7px 14px 7px 28px;background:rgba(0,0,0,0.03)">
+                <div style="position:absolute;inset:0;width:${sPct}%;background:${sFill};transition:width 0.4s ease;pointer-events:none"></div>
+                <div style="position:relative;display:flex;align-items:center;justify-content:space-between">
+                  <span style="font-size:11px;font-weight:800;color:${sColor};letter-spacing:0.5px;text-transform:uppercase">${topic.section}</span>
+                  <span style="font-size:10px;font-weight:700;color:${sColor};opacity:0.85">${sPct}%</span>
+                </div>
+              </div>
+            </td></tr>`;
+          }
+
           html += `<tr style="background:var(--surface)"><td style="padding:6px 4px 6px 12px;border-bottom:1px solid var(--border)">
-            <div style="display:flex;align-items:center;gap:6px;padding-left:12px">
-              <button class="pc-topic-del" onclick="_pcDelTopic(${si},${ti})" title="Remove" style="flex-shrink:0">&#215;</button>
+            <div style="display:flex;align-items:center;gap:6px;padding-left:${topic.section ? '28px' : '12px'}">
+              ${topic.permanent ? '' : `<button class="pc-topic-del" onclick="_pcDelTopic(${si},${ti})" title="Remove" style="flex-shrink:0">&#215;</button>`}
               <span style="font-size:12px;font-weight:500;color:var(--text)">${escHtml(topic.name)}</span>
               <span style="font-size:10px;font-weight:700;color:var(--accent);white-space:nowrap;margin-left:4px">${rowPct}%</span>
             </div>
@@ -2471,6 +2708,7 @@ window._pcDelSubj = (si) => {
   showConfirm('Delete subject?', `"${subj.name}" and all its chapters will be removed. You can restore it from Backups.`, () => {
     pushTrash('subject', subj.name, subj);
     pcData.subjects.splice(si, 1);
+    _pcExpanded.clear(); // reset expand state so indices don't misalign
     savePC(); renderPC();
   });
 };
@@ -2479,6 +2717,7 @@ window._pcDelTopic = (si, ti) => {
   const subj  = pcData.subjects[si];
   const topic = subj?.topics[ti];
   if (!topic) return;
+  if (topic.permanent) { showToast('Default syllabus chapters can\'t be deleted'); return; }
   showConfirm('Delete chapter?', `"${topic.name}" will be removed. You can restore it from Backups.`, () => {
     pushTrash('chapter', `${topic.name} (${subj.name})`, { subjName: subj.name, topic });
     subj.topics.splice(ti, 1);
@@ -3113,9 +3352,9 @@ document.getElementById('aiModeQuiz').addEventListener('click', () => {
       }
     }
 
-    // No session — show Netflix-style profile picker
+    // No session — show normal login screen
     removeBoot();
-    await showProfilePicker();
+    showLoginView();
 
   } catch(e) {
     console.warn('Boot error:', e);
