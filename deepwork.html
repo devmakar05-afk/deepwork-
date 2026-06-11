@@ -1086,27 +1086,49 @@ function signOut() {
 
 function saveSession(profileId, name) {
   const val = JSON.stringify({ profileId, name });
-  saveJ(SESSION_KEY, { profileId, name });
-  // also persist in cookie for Fluid/WebKit which may clear localStorage
+  // Save to ALL 3 storages — Fluid/WebKit may clear any one of them
+  try { localStorage.setItem(SESSION_KEY, val); } catch(e) {}
+  try { sessionStorage.setItem(SESSION_KEY, val); } catch(e) {}
+  // Cookie with 2 year expiry — no SameSite restriction for local WebKit
   const exp = new Date(); exp.setFullYear(exp.getFullYear() + 2);
-  document.cookie = `${SESSION_KEY}=${encodeURIComponent(val)};expires=${exp.toUTCString()};path=/;SameSite=Lax`;
+  try {
+    document.cookie = `${SESSION_KEY}=${encodeURIComponent(val)};expires=${exp.toUTCString()};path=/`;
+    document.cookie = `${SESSION_KEY}_b=${encodeURIComponent(val)};expires=${exp.toUTCString()};path=/;SameSite=None`;
+  } catch(e) {}
 }
 
 function loadSession() {
-  // try localStorage first
-  const ls = loadJ(SESSION_KEY);
-  if (ls && ls.profileId) return ls;
-  // fallback to cookie
-  const match = document.cookie.split(';').map(c => c.trim()).find(c => c.startsWith(SESSION_KEY + '='));
-  if (match) {
-    try { return JSON.parse(decodeURIComponent(match.split('=').slice(1).join('='))); } catch(e) {}
+  // Try all 3 storages — use whichever has valid data
+  const sources = [];
+  try { const v = localStorage.getItem(SESSION_KEY); if (v) sources.push(v); } catch(e) {}
+  try { const v = sessionStorage.getItem(SESSION_KEY); if (v) sources.push(v); } catch(e) {}
+  // Try cookies
+  try {
+    document.cookie.split(';').forEach(c => {
+      c = c.trim();
+      if (c.startsWith(SESSION_KEY + '=') || c.startsWith(SESSION_KEY + '_b=')) {
+        const raw = c.split('=').slice(1).join('=');
+        if (raw) sources.push(decodeURIComponent(raw));
+      }
+    });
+  } catch(e) {}
+  // Return first valid session found
+  for (const src of sources) {
+    try {
+      const parsed = typeof src === 'string' ? JSON.parse(src) : src;
+      if (parsed && parsed.profileId) return parsed;
+    } catch(e) {}
   }
   return null;
 }
 
 function clearSession() {
-  localStorage.removeItem(SESSION_KEY);
-  document.cookie = `${SESSION_KEY}=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;`;
+  try { localStorage.removeItem(SESSION_KEY); } catch(e) {}
+  try { sessionStorage.removeItem(SESSION_KEY); } catch(e) {}
+  try {
+    document.cookie = `${SESSION_KEY}=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/`;
+    document.cookie = `${SESSION_KEY}_b=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/`;
+  } catch(e) {}
 }
 document.getElementById('showNewProfileBtn').addEventListener('click', showNewProfileView);
 document.getElementById('loginSubmitBtn').addEventListener('click', handleLogin);
