@@ -461,11 +461,32 @@ body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-h
 .nta-rb-num{font-size:22px;font-weight:800;line-height:1}
 .nta-rb-label{font-size:11px;color:var(--text2);margin-top:3px}
 @media(max-width:640px){.nta-body{flex-direction:column}.nta-sidebar{width:100%;border-top:1px solid var(--border)}.nta-palette{grid-template-columns:repeat(8,1fr)}}
+
+/* ══ NETFLIX PROFILE PICKER ══ */
+#profilePicker{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9998;gap:32px}
+.picker-title{font-size:22px;font-weight:700;color:var(--text);letter-spacing:0.02em}
+.picker-profiles{display:flex;flex-wrap:wrap;gap:20px;justify-content:center;max-width:600px}
+.picker-profile{display:flex;flex-direction:column;align-items:center;gap:12px;cursor:pointer;padding:12px;border-radius:16px;transition:all .2s;border:2px solid transparent}
+.picker-profile:hover{background:var(--accent-dim);border-color:var(--accent);transform:scale(1.04)}
+.picker-avatar{width:80px;height:80px;border-radius:16px;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:32px;font-weight:700;flex-shrink:0}
+.picker-name{font-size:14px;font-weight:600;color:var(--text);text-align:center}
+.picker-add{display:flex;flex-direction:column;align-items:center;gap:12px;cursor:pointer;padding:12px;border-radius:16px;transition:all .2s;border:2px dashed var(--border)}
+.picker-add:hover{border-color:var(--accent);background:var(--accent-dim)}
+.picker-add-icon{width:80px;height:80px;border-radius:16px;background:var(--bg);border:2px dashed var(--border);display:flex;align-items:center;justify-content:center;font-size:32px;color:var(--text3)}
+.picker-add-name{font-size:14px;font-weight:600;color:var(--text2)}
+
 </style>
 </head>
 <body>
 
 <!-- ══ LOGIN SCREEN ══ -->
+
+<!-- ══ NETFLIX PROFILE PICKER ══ -->
+<div id="profilePicker" style="display:none">
+  <div class="picker-title">Who's studying?</div>
+  <div class="picker-profiles" id="pickerProfiles"></div>
+</div>
+
 <div id="loginScreen">
   <div class="login-card" id="loginCard">
     <!-- name + PIN login view -->
@@ -959,7 +980,40 @@ function showLoginView() {
   document.getElementById('loginError').textContent = '';
   document.getElementById('loginNameInput').value = '';
   document.getElementById('loginPinInput').value = '';
-  setTimeout(() => document.getElementById('loginNameInput').focus(), 50);
+
+  // If there's a saved session — prefill the name and focus PIN
+  const session = loadSession();
+  if (session && session.name) {
+    document.getElementById('loginNameInput').value = session.name;
+    setTimeout(() => document.getElementById('loginPinInput').focus(), 50);
+  } else {
+    setTimeout(() => document.getElementById('loginNameInput').focus(), 50);
+  }
+
+  // Show saved profile button if session exists
+  const savedProfileRow = document.getElementById('savedProfileRow');
+  if (savedProfileRow) savedProfileRow.remove();
+  if (session && session.name) {
+    const row = document.createElement('div');
+    row.id = 'savedProfileRow';
+    row.style.cssText = 'margin-bottom:14px';
+    row.innerHTML = `
+      <div style="font-size:11px;color:var(--text2);font-weight:600;margin-bottom:8px;letter-spacing:0.04em">YOUR PROFILE</div>
+      <button onclick="prefillProfile('${session.name}')" style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-radius:13px;border:1.5px solid var(--border);background:var(--bg);cursor:pointer;font-family:'Inter',sans-serif;font-size:13px;font-weight:600;color:var(--text);transition:all .18s;width:100%;text-align:left" onmouseover="this.style.borderColor='var(--accent)';this.style.background='var(--accent-dim)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--bg)'">
+        <div style="width:34px;height:34px;border-radius:10px;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;flex-shrink:0">${session.name.charAt(0).toUpperCase()}</div>
+        <div>
+          <div style="font-size:13px;font-weight:700">${session.name}</div>
+          <div style="font-size:11px;color:var(--text2);margin-top:1px">Tap to continue</div>
+        </div>
+      </button>`;
+    const loginSub = document.querySelector('.login-sub');
+    if (loginSub) loginSub.after(row);
+  }
+}
+
+function prefillProfile(name) {
+  document.getElementById('loginNameInput').value = name;
+  setTimeout(() => document.getElementById('loginPinInput').focus(), 50);
 }
 
 function showNewProfileView() {
@@ -1079,9 +1133,64 @@ function signOut() {
   clearSession();
   activeProfile = null; data={}; habits=[]; notes=[]; manualData={};
   document.getElementById('appScreen').style.display = 'none';
-  document.getElementById('loginScreen').style.display = 'flex';
-  renderProfilesList();
-  showLoginView();
+  document.getElementById('loginScreen').style.display = 'none';
+  showProfilePicker();
+}
+
+async function showProfilePicker() {
+  let profiles = loadJ('dw_profiles_v1') || [];
+  try {
+    const fb = await _fbQuery('deepwork_profiles', null, null);
+    if (fb && fb.length > 0) {
+      fb.forEach(p => { if (!profiles.find(x => x.id === p.id)) profiles.push(p); });
+      saveJ('dw_profiles_v1', profiles);
+    }
+  } catch(e) {}
+
+  const picker = document.getElementById('profilePicker');
+  const container = document.getElementById('pickerProfiles');
+  container.innerHTML = '';
+
+  if (profiles.length === 0) {
+    picker.style.display = 'none';
+    document.getElementById('loginScreen').style.display = 'flex';
+    showNewProfileView();
+    return;
+  }
+
+  profiles.forEach(p => {
+    const card = document.createElement('div');
+    card.className = 'picker-profile';
+    card.innerHTML = `
+      <div class="picker-avatar">${p.name.charAt(0).toUpperCase()}</div>
+      <div class="picker-name">${p.name}</div>`;
+    card.addEventListener('click', async () => {
+      picker.style.display = 'none';
+      const loadDiv = document.createElement('div');
+      loadDiv.id = 'bootLoader2';
+      loadDiv.style.cssText = 'position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:9999';
+      loadDiv.innerHTML = '<div style="width:24px;height:24px;border:2.5px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite"></div>';
+      document.body.appendChild(loadDiv);
+      saveSession(p.id, p.name);
+      await launchApp(p);
+      const ld = document.getElementById('bootLoader2');
+      if (ld) ld.remove();
+    });
+    container.appendChild(card);
+  });
+
+  const addCard = document.createElement('div');
+  addCard.className = 'picker-add';
+  addCard.innerHTML = `<div class="picker-add-icon">+</div><div class="picker-add-name">Add Profile</div>`;
+  addCard.addEventListener('click', () => {
+    picker.style.display = 'none';
+    document.getElementById('loginScreen').style.display = 'flex';
+    showNewProfileView();
+  });
+  container.appendChild(addCard);
+
+  picker.style.display = 'flex';
+  document.getElementById('loginScreen').style.display = 'none';
 }
 
 function saveSession(profileId, name) {
@@ -2974,16 +3083,13 @@ document.getElementById('aiModeQuiz').addEventListener('click', () => {
 //  BOOT
 // ═══════════════════════════════════════════════
 (async function boot() {
-  // Always show loading first — NEVER flash login screen if session exists
-  document.getElementById('app').style.display = 'none';
-  document.getElementById('loginView').style.display = 'none';
-
-  // Show a simple loading state
+  // Show loading spinner — never flash login
   const loadDiv = document.createElement('div');
   loadDiv.id = 'bootLoader';
   loadDiv.style.cssText = 'position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:9999;flex-direction:column;gap:16px';
   loadDiv.innerHTML = '<div style="width:24px;height:24px;border:2.5px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite"></div><div style="font-size:13px;color:var(--text2);font-weight:500;letter-spacing:0.04em">Loading...</div>';
   document.body.appendChild(loadDiv);
+  document.getElementById('loginScreen').style.display = 'none';
 
   function removeBoot() {
     const el = document.getElementById('bootLoader');
@@ -2997,22 +3103,25 @@ document.getElementById('aiModeQuiz').addEventListener('click', () => {
       const local = loadJ('dw_profiles_v1') || [];
       let profile = local.find(p => p.id === session.profileId);
       if (!profile) {
-        // Try Firebase
         try { profile = await _fbGet('deepwork_profiles/' + session.profileId); } catch(e) {}
       }
       if (profile) {
+        // ✅ Session found — go straight in, NO PIN
         removeBoot();
         await launchApp(profile);
         return;
       }
     }
+
+    // No session — show Netflix-style profile picker
+    removeBoot();
+    await showProfilePicker();
+
   } catch(e) {
     console.warn('Boot error:', e);
+    removeBoot();
+    showLoginView();
   }
-
-  // No session or profile not found — show login
-  removeBoot();
-  showLoginView();
 })();
 </script>
 </body>
